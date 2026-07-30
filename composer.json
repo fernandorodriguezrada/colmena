@@ -1,0 +1,12 @@
+{
+    "name": "colmena/sistema-informes",
+    "description": "Sistema de Gestión de Informes - La Colmena de la Vida",
+    "type": "project",
+    "require": {
+        "dompdf/dompdf": "^3.0"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}
