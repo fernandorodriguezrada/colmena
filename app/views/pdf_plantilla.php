@@ -18,7 +18,7 @@
         }
         .page-content {
             position: relative; z-index: 1;
-            padding: 110pt 43pt 57pt 85pt;
+            padding: 57pt 43pt 57pt 85pt;
         }
         .doc-date {
             text-align: right; font-size: 12pt; margin-bottom: 2pt; padding-top: 8pt;
@@ -69,10 +69,6 @@
             </div>
 
             <?= $componentesHtml ?? '<div class="section"><div class="content">El informe se elaborará con el contenido estándar.</div></div>' ?>
-
-            <div class="firma">
-                <div class="linea">Firma del Responsable</div>
-            </div>
 
         </div>
     </div>

@@ -67,16 +67,15 @@ class GraficoComponente implements ComponenteInterface
 
     private function generateSVG(): string
     {
-        $padding = 50;
         $width = 600;
         $height = 600;
+        $padding = max(10, round($width * 0.05));
         $legendH = !empty($this->labels) ? 22 : 0;
         $chartH = $height - $legendH;
         $innerW = min($width - $padding * 2, $width * 0.75);
         $innerH = min($chartH - $padding, $width * 0.65);
 
         $svg = "<svg xmlns='http://www.w3.org/2000/svg' width='$width' height='$height' viewBox='0 0 $width $height'>";
-        $svg .= "<rect width='$width' height='$height' fill='#fff'/>";
 
         if ($this->kind === 'pie') {
             $svg .= $this->renderPieChart($padding, $innerW, $innerH, $width, $chartH);

@@ -7,6 +7,7 @@
     box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     border-radius: 4px;
     overflow-y: auto;
+    overflow-x: hidden;
     box-sizing: border-box;
 }
 .preview-page .page-bg {
@@ -17,7 +18,10 @@
 }
 .preview-page .page-content {
     position: relative; z-index: 1;
-    padding: 13.9% 7% 7.2% 13.9%;
+    padding: 57pt 43pt 57pt 85pt;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: calc(100% - 114pt);
     font-family: 'Times', 'Times New Roman', serif;
     font-size: 12pt;
     line-height: 1.5;
@@ -28,7 +32,7 @@
 .preview-page .pdf-data-line { text-align: center; font-size: 11pt; margin-bottom: 14pt; }
 .preview-page .pdf-section { margin-bottom: 10pt; }
 .preview-page .pdf-section h3 { font-size: 12pt; font-weight: bold; margin-bottom: 4pt; }
-.preview-page .pdf-content { font-size: 12pt; text-align: justify; }
+.preview-page .pdf-content { font-size: 12pt; text-align: justify; overflow-wrap: break-word; word-wrap: break-word; }
 .preview-page .pdf-firma { margin-top: 32pt; text-align: center; }
 .preview-page .pdf-linea { border-top: 1px solid #000; width: 240pt; margin: 0 auto; padding-top: 4pt; font-size: 10pt; color: #555; }
 .preview-page .pdf-table { width:100%; border-collapse: collapse; margin: 10pt 0; }
@@ -43,6 +47,12 @@
 .preview-page .pdf-caption { text-align: center; font-size: 10pt; color: #666; margin-top: 5pt; }
 .preview-page .pdf-collage { display: flex; flex-wrap: wrap; justify-content: center; gap: 4pt; margin: 10pt 0; }
 .preview-page .pdf-collage img { width: calc(50% - 4pt); height: auto; object-fit: cover; }
+.pieza-draggable { position: absolute; cursor: grab; min-height: 20px; box-sizing: border-box; overflow-wrap: break-word; word-wrap: break-word; }
+.pieza-draggable:hover { outline: 2px dashed #EF7F31; outline-offset: 2px; }
+.pieza-draggable.dragging { cursor: grabbing; outline: 2px solid #EF7F31; z-index: 999; opacity: 0.85; }
+.pieza-draggable .drag-label { position: absolute; top: -18px; left: 0; font-size: 8pt; background: #EF7F31; color: #fff; padding: 1px 6px; border-radius: 3px; opacity: 0; transition: opacity 0.2s; white-space: nowrap; pointer-events: none; }
+.pieza-draggable:hover .drag-label { opacity: 1; }
+.toolbar-btn.active { background: #EF7F31 !important; color: #fff !important; }
 </style>
 <div class="pantalla px-8">
     <a href="index.php?action=paso3" class="text-naranja font-bold mb-4 inline-block"><i class="fa-solid fa-arrow-left"></i> Volver</a>
@@ -67,9 +77,13 @@
                     <i class="fa-solid fa-image text-3xl text-crema opacity-80" style="text-shadow: 0 2px 3px rgba(0,0,0,0.25);"></i>
                     <span class="text-sm font-bold mt-1.5">Imagen</span>
                 </button>
-                <button type="button" class="btn-add-pieza bg-rosa border-b-4 border-pink-700 shadow-md p-4 rounded-xl text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0.5 transition-all duration-150 flex flex-col items-center col-span-2" data-type="collage">
+                <button type="button" class="btn-add-pieza bg-rosa border-b-4 border-pink-700 shadow-md p-4 rounded-xl text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0.5 transition-all duration-150 flex flex-col items-center" data-type="collage">
                     <i class="fa-solid fa-images text-3xl text-crema opacity-80" style="text-shadow: 0 2px 3px rgba(0,0,0,0.25);"></i>
                     <span class="text-sm font-bold mt-1.5">Collage</span>
+                </button>
+                <button type="button" class="btn-add-pieza bg-verdeOscuro border-b-4 border-green-900 shadow-md p-4 rounded-xl text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0.5 transition-all duration-150 flex flex-col items-center" data-type="firma">
+                    <i class="fa-solid fa-pen text-3xl text-crema opacity-80" style="text-shadow: 0 2px 3px rgba(0,0,0,0.25);"></i>
+                    <span class="text-sm font-bold mt-1.5">Firma</span>
                 </button>
             </div>
         </div>
@@ -212,7 +226,32 @@ const piezasInput = document.getElementById('piezas-json');
 
 const templates = {
     text: `<div class="mb-4"><label class="block text-lg font-bold mb-1">Contenido del texto</label>
-        <textarea name="content" rows="6" class="w-full p-4 text-lg border-2 border-gray-300 rounded-xl focus:outline-none focus:border-verdeOscuro" placeholder="Escribe aquí el texto..."></textarea></div>`,
+        <div class="toolbar border-2 border-b-0 border-gray-300 rounded-t-xl bg-gray-100 p-2 flex flex-wrap gap-1 items-center select-none">
+            <button type="button" data-cmd="bold" class="toolbar-btn w-8 h-8 rounded hover:bg-gray-300 font-bold text-sm" title="Negrita">B</button>
+            <button type="button" data-cmd="italic" class="toolbar-btn w-8 h-8 rounded hover:bg-gray-300 italic text-sm" title="Cursiva">I</button>
+            <button type="button" data-cmd="underline" class="toolbar-btn w-8 h-8 rounded hover:bg-gray-300 underline text-sm" title="Subrayado">U</button>
+            <span class="w-px h-6 bg-gray-400 mx-1"></span>
+            <select data-cmd="fontSize" class="toolbar-select text-xs border border-gray-300 rounded px-1 py-1 bg-white">
+                <option value="">Tamaño</option>
+                <option value="10">10px</option>
+                <option value="12">12px</option>
+                <option value="14">14px</option>
+                <option value="16">16px</option>
+                <option value="18">18px</option>
+                <option value="24">24px</option>
+                <option value="32">32px</option>
+                <option value="48">48px</option>
+            </select>
+            <span class="w-px h-6 bg-gray-400 mx-1"></span>
+            <button type="button" data-cmd="left" class="toolbar-btn w-8 h-8 rounded hover:bg-gray-300 text-xs" title="Izquierda"><i class="fa-solid fa-align-left"></i></button>
+            <button type="button" data-cmd="center" class="toolbar-btn w-8 h-8 rounded hover:bg-gray-300 text-xs" title="Centrado"><i class="fa-solid fa-align-center"></i></button>
+            <button type="button" data-cmd="right" class="toolbar-btn w-8 h-8 rounded hover:bg-gray-300 text-xs" title="Derecha"><i class="fa-solid fa-align-right"></i></button>
+            <button type="button" data-cmd="justify" class="toolbar-btn w-8 h-8 rounded hover:bg-gray-300 text-xs" title="Justificado"><i class="fa-solid fa-align-justify"></i></button>
+            <span class="w-px h-6 bg-gray-400 mx-1"></span>
+            <button type="button" data-cmd="insertUnorderedList" class="toolbar-btn w-8 h-8 rounded hover:bg-gray-300 text-xs" title="Lista"><i class="fa-solid fa-list"></i></button>
+            <button type="button" data-cmd="insertOrderedList" class="toolbar-btn w-8 h-8 rounded hover:bg-gray-300 text-xs" title="Lista numerada"><i class="fa-solid fa-list-ol"></i></button>
+        </div>
+        <div id="text-editor" contenteditable="true" class="w-full p-4 text-base border-2 border-gray-300 rounded-b-xl focus:outline-none focus:border-verdeOscuro min-h-[200px] bg-white" style="white-space:pre-wrap"></div></div>`,
     table: `<div class="mb-4"><label class="block text-lg font-bold mb-1">Cabeceras (separadas por coma)</label>
         <input name="headers" class="w-full p-3 text-lg border-2 border-gray-300 rounded-xl" placeholder="Nombre, Edad, Diagnóstico"></div>
         <div class="mb-4"><label class="block text-lg font-bold mb-1">Filas (una por línea, valores separados por coma)</label>
@@ -271,11 +310,15 @@ const templates = {
         <select name="layout" class="w-full p-3 text-lg border-2 border-gray-300 rounded-xl">
             <option value="grid">Cuadrícula</option>
             <option value="masonry">Mosaico</option>
-        </select></div>`
+        </select></div>`,
+    firma: `<div class="mb-4"><label class="block text-lg font-bold mb-1">Nombre del firmante</label>
+        <input name="nombre" class="w-full p-3 text-lg border-2 border-gray-300 rounded-xl" placeholder="Lic. María Pérez"></div>
+        <div class="mb-4"><label class="block text-lg font-bold mb-1">Cargo (opcional)</label>
+        <input name="titulo" class="w-full p-3 text-lg border-2 border-gray-300 rounded-xl" placeholder="Directora Ejecutiva"></div>`
 };
 
 function generateSimpleChartSVG(kind, labels, data, colors, width, height) {
-    const padding = 50;
+    const padding = Math.max(10, Math.round(width * 0.05));
     const fontSize = Math.max(8, Math.round(width * 0.04));
     const legendH = labels.length ? Math.round(fontSize * 2) : 0;
     const chartH = height - legendH;
@@ -284,7 +327,6 @@ function generateSimpleChartSVG(kind, labels, data, colors, width, height) {
     const usedColors = colors.length ? colors : ['#EF7F31', '#7CB342', '#4D813F', '#E02C35', '#FDF9F3', '#424242'];
 
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
-    svg += `<rect width="${width}" height="${height}" fill="#fff"/>`;
 
     if (kind === 'pie') {
         const cx = width / 2, cy = (chartH + padding) / 2;
@@ -403,7 +445,7 @@ function renderLista() {
         renderPDFPreview();
         return;
     }
-    const typeColors = { text: 'border-l-naranja', table: 'border-l-verdeClaro', chart: 'border-l-azul', image: 'border-l-morado', collage: 'border-l-rosa' };
+    const typeColors = { text: 'border-l-naranja', table: 'border-l-verdeClaro', chart: 'border-l-azul', image: 'border-l-morado', collage: 'border-l-rosa', firma: 'border-l-verdeOscuro' };
     lista.innerHTML = piezas.map((p, i) => `
         <div class="pieza-item bg-white border-2 border-gray-200 border-l-8 ${typeColors[p.type] || 'border-l-naranja'} rounded-xl shadow-md p-4 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200" data-idx="${i}">
             <span class="text-gray-400 text-2xl cursor-move select-none" title="Arrastrar">⋮⋮</span>
@@ -452,56 +494,150 @@ function renderPDFPreview() {
         innerHtml += '<div class="pdf-data-line"><b>Tipo:</b> ' + escHtml(INFORME_DATA.tipo_personalizado || INFORME_DATA.tipo_nombre || '') + ' &nbsp;|&nbsp; <b>N&deg;:</b> ' + String(INFORME_DATA.id || '').padStart(4, '0') + '</div>';
         innerHtml += '<div class="pdf-section"><h3>Motivo</h3><div class="pdf-content">' + escHtml(INFORME_DATA.motivo || '') + '</div></div>';
         innerHtml += '<div class="pdf-section"><h3>Observaciones</h3><div class="pdf-content">' + escHtml(INFORME_DATA.observaciones || '') + '</div></div>';
-        piezas.forEach(function(p) { innerHtml += renderPiezaPreview(p); });
-        innerHtml += '<div class="pdf-firma"><div class="pdf-linea">Firma del Responsable</div></div>';
+        piezas.forEach(function(p, i) { innerHtml += renderPiezaPreview(p, i); });
     }
-    container.innerHTML = '<img class="page-bg" src="assets/img/pagina.png" alt=""><div class="page-content">' + innerHtml + '</div>';
+    container.innerHTML = '<img class="page-bg" src="assets/img/pagina.png" alt=""><div class="page-content" style="position:relative">' + innerHtml + '</div>';
+    container.querySelectorAll('.pieza-draggable').forEach(function(el) {
+        el.addEventListener('mousedown', startDrag);
+    });
 }
 
-function renderPiezaPreview(p) {
+function renderPiezaPreview(p, idx) {
+    var inner;
     switch (p.type) {
         case 'text':
-            return '<div class="pdf-section"><div class="pdf-content">' + (p.content || '') + '</div></div>';
+            inner = '<div class="pdf-content">' + (p.content || '') + '</div>';
+            break;
         case 'table': {
-            const headers = (p.headers || '').split(',').map(s => s.trim()).filter(Boolean);
-            const rows = (p.rows || '').split('\n').filter(Boolean).map(r => r.split(',').map(s => s.trim()));
-            let table = '<table class="pdf-table"><thead><tr>';
-            headers.forEach(h => table += '<th>' + escHtml(h) + '</th>');
+            var headers = (p.headers || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+            var rows = (p.rows || '').split('\n').filter(Boolean).map(function(r) { return r.split(',').map(function(s) { return s.trim(); }); });
+            var table = '<table class="pdf-table"><thead><tr>';
+            headers.forEach(function(h) { table += '<th>' + escHtml(h) + '</th>'; });
             table += '</tr></thead><tbody>';
-            rows.forEach(row => {
+            rows.forEach(function(row) {
                 table += '<tr>';
-                row.forEach(cell => table += '<td>' + escHtml(cell) + '</td>');
+                row.forEach(function(cell) { table += '<td>' + escHtml(cell) + '</td>'; });
                 table += '</tr>';
             });
             table += '</tbody></table>';
-            return table;
+            inner = table;
+            break;
         }
         case 'chart': {
-            const config = p.config || {};
+            var config = p.config || {};
             if (config.image_base64) {
-                return '<div class="pdf-chart"><img src="data:image/svg+xml;base64,' + config.image_base64 + '" style="display:block; margin:0 auto; max-width:100%"></div>';
+                inner = '<div class="pdf-chart"><img src="data:image/svg+xml;base64,' + config.image_base64 + '" style="display:block; margin:0 auto; max-width:100%"></div>';
+            } else {
+                var svg = generateSimpleChartSVG(config.kind || 'pie', config.labels || [], config.data || [], config.colors || [], 280, 280);
+                inner = '<div class="pdf-chart" style="text-align:center">' + svg + '</div>';
             }
-            const svg = generateSimpleChartSVG(config.kind || 'pie', config.labels || [], config.data || [], config.colors || [], 280, 280);
-            return '<div class="pdf-chart" style="text-align:center">' + svg + '</div>';
+            break;
         }
         case 'image': {
-            const config = p.config || {};
-            if (config.image_base64) {
-                let img = '<img src="data:' + (config.mime || 'image/png') + ';base64,' + config.image_base64 + '" style="max-width:100%">';
-                let cap = config.caption ? '<div class="pdf-caption">' + escHtml(config.caption) + '</div>' : '';
-                return '<div class="pdf-image">' + img + cap + '</div>';
+            var cfg = p.config || {};
+            if (cfg.image_base64) {
+                var img = '<img src="data:' + (cfg.mime || 'image/png') + ';base64,' + cfg.image_base64 + '" style="max-width:100%">';
+                var cap = cfg.caption ? '<div class="pdf-caption">' + escHtml(cfg.caption) + '</div>' : '';
+                inner = '<div class="pdf-image">' + img + cap + '</div>';
+            } else {
+                inner = '';
             }
-            return '';
+            break;
         }
         case 'collage': {
-            const imgs = (p.images || []).map(function(img) {
+            var imgs = (p.images || []).map(function(img) {
                 return '<img src="data:' + (img.mime || 'image/png') + ';base64,' + (img.base64 || '') + '">';
             }).join('');
-            return imgs ? '<div class="pdf-collage">' + imgs + '</div>' : '';
+            inner = imgs ? '<div class="pdf-collage">' + imgs + '</div>' : '';
+            break;
+        }
+        case 'firma': {
+            var cfg = p.config || {};
+            var nombre = cfg.nombre || p.nombre || '';
+            var titulo = cfg.titulo || p.titulo || '';
+            inner = '<div class="pdf-firma" style="margin-top:0"><div class="pdf-linea">' + escHtml(nombre) + (titulo ? '<br><span style="font-size:10pt;color:#555">' + escHtml(titulo) + '</span>' : '') + '</div></div>';
+            break;
         }
         default:
-            return '';
+            inner = '';
     }
+    var px = p.posX || 5;
+    var py = p.posY || 10;
+    var pw = p.width || 90;
+    return '<div class="pieza-draggable" data-idx="' + idx + '" style="left:' + px + '%; top:' + py + '%; width:' + pw + '%"><span class="drag-label">' + p.type + '</span>' + inner + '</div>';
+}
+
+var dragState = null;
+
+function getContentBox(el) {
+    var cs = window.getComputedStyle(el);
+    return {
+        pt: parseFloat(cs.paddingTop),
+        pb: parseFloat(cs.paddingBottom),
+        pl: parseFloat(cs.paddingLeft),
+        pr: parseFloat(cs.paddingRight)
+    };
+}
+
+function startDrag(e) {
+    if (e.button !== 0) return;
+    var el = e.currentTarget;
+    var parent = el.parentNode;
+    var pageEl = document.querySelector('.preview-page');
+    var pad = getContentBox(parent);
+    var parentRect = parent.getBoundingClientRect();
+    var pageRect = pageEl.getBoundingClientRect();
+    var contentW = parentRect.width - pad.pl - pad.pr;
+    var contentH = parentRect.height - pad.pt - pad.pb;
+    var pctX = ((e.clientX - parentRect.left - pad.pl) / contentW) * 100;
+    var pctY = ((e.clientY - parentRect.top - pad.pt) / contentH) * 100;
+    var curLeft = parseFloat(el.style.left) || 0;
+    var curTop = parseFloat(el.style.top) || 0;
+    var maxPctY = Math.min(92, ((pageRect.bottom - parentRect.top - pad.pt) / contentH) * 100);
+    dragState = {
+        el: el,
+        idx: parseInt(el.dataset.idx),
+        parentRect: parentRect,
+        pad: pad,
+        contentW: contentW,
+        contentH: contentH,
+        maxPctY: maxPctY,
+        offsetPctX: pctX - curLeft,
+        offsetPctY: pctY - curTop
+    };
+    el.classList.add('dragging');
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', stopDrag);
+    e.preventDefault();
+}
+
+function doDrag(e) {
+    if (!dragState) return;
+    var w = parseFloat(dragState.el.style.width) || 90;
+    var pctX = ((e.clientX - dragState.parentRect.left - dragState.pad.pl) / dragState.contentW) * 100;
+    var pctY = ((e.clientY - dragState.parentRect.top - dragState.pad.pt) / dragState.contentH) * 100;
+    var newX = Math.max(0, Math.min(100 - w, pctX - dragState.offsetPctX));
+    var newY = Math.max(0, Math.min(dragState.maxPctY, pctY - dragState.offsetPctY));
+    dragState.el.style.left = newX + '%';
+    dragState.el.style.top = newY + '%';
+}
+
+function stopDrag(e) {
+    if (!dragState) return;
+    dragState.el.classList.remove('dragging');
+    document.removeEventListener('mousemove', doDrag);
+    document.removeEventListener('mouseup', stopDrag);
+    var newLeft = parseFloat(dragState.el.style.left);
+    var newTop = parseFloat(dragState.el.style.top);
+    if (isNaN(newLeft)) newLeft = 5;
+    if (isNaN(newTop)) newTop = 10;
+    var piezas = JSON.parse(piezasInput.value || '[]');
+    if (piezas[dragState.idx]) {
+        piezas[dragState.idx].posX = Math.round(newLeft * 10) / 10;
+        piezas[dragState.idx].posY = Math.round(newTop * 10) / 10;
+        piezasInput.value = JSON.stringify(piezas);
+    }
+    dragState = null;
 }
 
 function escHtml(str) {
@@ -512,18 +648,29 @@ function escHtml(str) {
 function getResumen(p) {
     if (p.type === 'text') return p.content?.slice(0, 50) + '...';
     if (p.type === 'table') return `${(p.headers?.split(',').length || 0)} columnas × ${(p.rows?.split('\n').length || 0)} filas`;
-    if (p.type === 'chart') return `${p.kind} · ${(p.labels?.split(',').length || 0)} series`;
-    if (p.type === 'image') return p.caption || 'Imagen';
-    if (p.type === 'collage') return `${p.images?.length || 0} imágenes · ${p.layout}`;
+    if (p.type === 'chart') {
+        var cfg = p.config || {};
+        return (cfg.kind || 'pie') + ' · ' + (cfg.labels?.length || 0) + ' series';
+    }
+    if (p.type === 'image') return (p.config && p.config.caption) || 'Imagen';
+    if (p.type === 'collage') return (p.images ? p.images.length : 0) + ' imágenes · ' + (p.layout || 'grid');
+    if (p.type === 'firma') {
+        var cfg = p.config || {};
+        return (cfg.nombre || p.nombre || '') + ' — ' + (cfg.titulo || p.titulo || 'sin cargo');
+    }
     return '';
 }
 
 function getDetalle(p) {
     if (p.type === 'text') return 'Texto libre';
     if (p.type === 'table') return 'Tabla de datos';
-    if (p.type === 'chart') return `${p.kind} chart`;
+    if (p.type === 'chart') {
+        var cfg = p.config || {};
+        return (cfg.kind || 'pie') + ' chart';
+    }
     if (p.type === 'image') return 'Imagen única';
     if (p.type === 'collage') return 'Collage de imágenes';
+    if (p.type === 'firma') return 'Bloque de firma';
     return '';
 }
 
@@ -620,6 +767,18 @@ function openModal(type, idx = null) {
             if (el) el.addEventListener('input', initChartPreview);
         });
     }
+    if (type === 'text') {
+        initTextToolbar();
+        if (document.getElementById('modal-idx').value !== '') {
+            const piezas = JSON.parse(piezasInput.value || '[]');
+            const idxVal = parseInt(document.getElementById('modal-idx').value);
+            const p = piezas[idxVal];
+            if (p && p.content) {
+                document.getElementById('text-editor').innerHTML = p.content;
+            }
+        }
+        setTimeout(updateTextToolbarState, 50);
+    }
     if (type === 'image') setupImageUpload();
     if (type === 'collage') setupCollageUpload();
 }
@@ -627,6 +786,72 @@ function openModal(type, idx = null) {
 function closeModal() {
     document.getElementById('modal-pieza').classList.add('hidden');
     document.getElementById('modal-pieza').classList.remove('flex');
+}
+
+function initTextToolbar() {
+    document.querySelectorAll('.toolbar-btn').forEach(function(btn) {
+        btn.onclick = function(e) {
+            var cmd = this.dataset.cmd;
+            var editor = document.getElementById('text-editor');
+            if (editor) editor.focus();
+            if (cmd === 'left' || cmd === 'center' || cmd === 'right' || cmd === 'justify') {
+                var ALIGN_CMD = { left: 'justifyLeft', center: 'justifyCenter', right: 'justifyRight', justify: 'justifyFull' };
+                document.execCommand(ALIGN_CMD[cmd]);
+                updateToolbarActive(cmd);
+            } else if (cmd) {
+                document.execCommand(cmd, false, null);
+                updateToolbarActive();
+            }
+        };
+    });
+    document.querySelectorAll('.toolbar-select').forEach(function(sel) {
+        sel.onchange = function(e) {
+            var editor = document.getElementById('text-editor');
+            if (editor) editor.focus();
+            var cmd = this.dataset.cmd;
+            var val = this.value;
+            if (cmd === 'fontSize' && val) {
+                applyFontSize(parseInt(val));
+            } else if (cmd && val) {
+                document.execCommand(cmd, false, val);
+            }
+            this.value = '';
+        };
+    });
+    var editor = document.getElementById('text-editor');
+    if (editor) {
+        editor.addEventListener('mouseup', updateToolbarActive);
+        editor.addEventListener('keyup', updateToolbarActive);
+    }
+}
+
+function updateToolbarActive(lastAlign) {
+    document.querySelectorAll('.toolbar-btn').forEach(function(btn) {
+        var cmd = btn.dataset.cmd;
+        if (cmd === 'left' || cmd === 'center' || cmd === 'right' || cmd === 'justify') {
+            btn.classList.toggle('active', cmd === (lastAlign || 'left'));
+        }
+        if (cmd === 'bold') btn.classList.toggle('active', document.queryCommandState('bold'));
+        if (cmd === 'italic') btn.classList.toggle('active', document.queryCommandState('italic'));
+        if (cmd === 'underline') btn.classList.toggle('active', document.queryCommandState('underline'));
+    });
+}
+
+function applyFontSize(px) {
+    var sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    if (range.collapsed) return;
+    var span = document.createElement('span');
+    span.style.fontSize = px + 'px';
+    try {
+        range.surroundContents(span);
+    } catch(e) {
+        var fragment = range.extractContents();
+        span.appendChild(fragment);
+        range.insertNode(span);
+    }
+    sel.removeAllRanges();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -660,6 +885,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     for (const [k, v] of form.entries()) {
         if (k !== 'type' && k !== 'idx') pieza[k] = v;
+    }
+
+    if (type === 'text') {
+        var editor = document.getElementById('text-editor');
+        if (editor) pieza.content = editor.innerHTML;
     }
 
     if (type === 'chart') {
@@ -696,8 +926,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     let piezas = JSON.parse(piezasInput.value || '[]');
-    if (idx !== '') piezas[idx] = pieza;
-    else piezas.push(pieza);
+    if (idx !== '' && piezas[idx]) {
+        pieza.posX = piezas[idx].posX !== undefined ? piezas[idx].posX : 5;
+        pieza.posY = piezas[idx].posY !== undefined ? piezas[idx].posY : 10 + piezas.length * 18;
+        pieza.width = piezas[idx].width || 90;
+        piezas[idx] = pieza;
+    } else {
+        pieza.posX = 5;
+        const pCount = piezas.length;
+        pieza.posY = 10 + pCount * 18;
+        pieza.width = 90;
+        piezas.push(pieza);
+    }
 
     document.getElementById('piezas-json').value = JSON.stringify(piezas);
     renderLista();

@@ -24,8 +24,7 @@ class TextoComponente implements ComponenteInterface
     
     public function render(): string
     {
-        $content = nl2br(htmlspecialchars($this->content));
-        return "<div class='componente-texto'>" . $content . "</div>";
+        return "<div class='componente-texto'>" . $this->content . "</div>";
     }
     
     public function getType(): string
