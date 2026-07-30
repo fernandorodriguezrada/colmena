@@ -3,7 +3,7 @@
     <div class="bg-white p-8 rounded-2xl shadow-lg">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-3xl font-bold text-verdeOscuro">Paso 3: Detalles del Informe</h2>
-            <span class="bg-naranja text-white px-4 py-1 rounded-full font-bold">3 de 3</span>
+            <span class="bg-naranja text-white px-4 py-1 rounded-full font-bold">3 of 5</span>
         </div>
 
         <?php if (isset($_GET['error'])): ?>
@@ -46,7 +46,7 @@
 
             <button type="submit"
                     class="w-full bg-verdeOscuro hover:bg-green-800 text-white text-2xl font-bold py-4 rounded-xl shadow-md transition flex justify-center items-center gap-3 border-b-8 border-green-900">
-                <i class="fa-solid fa-print"></i> Guardar y Generar PDF
+                <i class="fa-solid fa-arrow-right"></i> Continuar a Componer Informe
             </button>
         </form>
     </div>

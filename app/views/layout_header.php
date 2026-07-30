@@ -16,7 +16,10 @@
                         verdeClaro: '#7CB342',
                         verdeOscuro: '#4D813F',
                         crema: '#FDF9F3',
-                        gris: '#424242'
+                        gris: '#424242',
+                        azul: '#36A2EB',
+                        morado: '#9966FF',
+                        rosa: '#FF6384'
                     }
                 }
             }

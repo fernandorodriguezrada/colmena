@@ -3,7 +3,7 @@
     <div class="bg-white p-8 rounded-2xl shadow-lg">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-3xl font-bold text-verdeOscuro">Paso 2: ¿Qué tipo de informe es?</h2>
-            <span class="bg-naranja text-white px-4 py-1 rounded-full font-bold">2 de 3</span>
+            <span class="bg-naranja text-white px-4 py-1 rounded-full font-bold">2 of 5</span>
         </div>
 
         <div class="bg-crema p-4 rounded-lg border border-gray-200 mb-6">
