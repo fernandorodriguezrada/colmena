@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../views/layout.php';
 require_once __DIR__ . '/../helpers/pdf_helper.php';
+require_once __DIR__ . '/../models/Components/ComponenteFactory.php';
 
 class InformeController
 {
@@ -79,6 +80,70 @@ class InformeController
             'tipoPersonalizado' => $_SESSION['wizard']['tipo_personalizado'] ?? '',
         ]);
     }
+    
+    public static function paso4(): void
+    {
+        $beneficiario = $_SESSION['wizard']['beneficiario'] ?? null;
+        $tipoId       = $_SESSION['wizard']['tipo_informe_id'] ?? 0;
+        $tipoPersonalizado = $_SESSION['wizard']['tipo_personalizado'] ?? '';
+        
+        if (!$beneficiario || !$tipoId) {
+            header('Location: index.php?action=paso1');
+            exit;
+        }
+        
+        $informeId = $_SESSION['wizard']['informe_id'] ?? null;
+        $informe = null;
+        $piezas = [];
+        
+        if ($informeId) {
+            $informe = Informe::findById($informeId);
+            if ($informe && !empty($informe['piezas_json'])) {
+                $piezas = json_decode($informe['piezas_json'], true) ?? [];
+            }
+        }
+        
+        renderLayout('paso4', [
+            'title'          => 'Paso 4 — Componer Informe',
+            'paso'           => 4,
+            'beneficiario'   => $beneficiario,
+            'tipoId'         => $tipoId,
+            'tipoPersonalizado' => $tipoPersonalizado,
+            'piezas'         => $piezas,
+            'informeId'      => $informeId,
+            'informe'        => $informe,
+        ]);
+    }
+    
+    public static function paso5(): void
+    {
+        $beneficiario = $_SESSION['wizard']['beneficiario'] ?? null;
+        $tipoId       = $_SESSION['wizard']['tipo_informe_id'] ?? 0;
+        $tipoPersonalizado = $_SESSION['wizard']['tipo_personalizado'] ?? '';
+        $informeId = $_SESSION['wizard']['informe_id'] ?? null;
+        
+        if (!$beneficiario || !$tipoId) {
+            header('Location: index.php?action=paso1');
+            exit;
+        }
+        
+        $piezas = [];
+        if ($informeId) {
+            $informe = Informe::findById($informeId);
+            if ($informe && !empty($informe['piezas_json'])) {
+                $piezas = json_decode($informe['piezas_json'], true) ?? [];
+            }
+        }
+        
+        renderLayout('paso5', [
+            'title'          => 'Paso 5 — Detalles Finales',
+            'paso'           => 5,
+            'beneficiario'   => $beneficiario,
+            'tipoId'         => $tipoId,
+            'tipoPersonalizado' => $tipoPersonalizado,
+            'piezas'         => $piezas,
+        ]);
+    }
 
     public static function guardar(): void
     {
@@ -100,15 +165,68 @@ class InformeController
         }
 
         $informeId = Informe::crear($beneficiarioId, $tipoInformeId, $motivo, $observaciones, $tipoPersonalizado ?: null, $elaboradoPor);
+        
+        $_SESSION['wizard']['informe_id'] = $informeId;
 
-        $beneficiario = Beneficiario::findById($beneficiarioId);
-        $informe      = Informe::findById($informeId);
-
+        header("Location: index.php?action=paso4");
+        exit;
+    }
+    
+    public static function guardarPiezas(): void
+    {
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Método no permitido']);
+            exit;
+        }
+        
+        $informeId = (int) ($_POST['informe_id'] ?? 0);
+        $piezasJson = $_POST['piezas_json'] ?? '[]';
+        
+        if (!$informeId) {
+            echo json_encode(['success' => false, 'error' => 'ID de informe inválido']);
+            exit;
+        }
+        
+        $piezas = json_decode($piezasJson, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo json_encode(['success' => false, 'error' => 'JSON inválido']);
+            exit;
+        }
+        
+        Informe::actualizarPiezas($informeId, $piezasJson);
+        
+        echo json_encode(['success' => true, 'piezas' => count($piezas)]);
+        exit;
+    }
+    
+    public static function finalizar(): void
+    {
+        $informeId = $_SESSION['wizard']['informe_id'] ?? 0;
+        
+        if (!$informeId) {
+            header('Location: index.php');
+            exit;
+        }
+        
+        $informe = Informe::findById($informeId);
+        $beneficiario = $_SESSION['wizard']['beneficiario'] ?? null;
+        
+        if (!$informe || !$beneficiario) {
+            header('Location: index.php?action=paso1');
+            exit;
+        }
+        
+        if (!empty($_POST['piezas_json'])) {
+            Informe::actualizarPiezas($informeId, $_POST['piezas_json']);
+        }
+        
         $pdfPath = PdfHelper::generar($informe, $beneficiario);
         Informe::actualizarRutaPdf($informeId, $pdfPath);
-
+        
         unset($_SESSION['wizard']);
-
+        
         header("Location: index.php?action=exito&id={$informeId}");
         exit;
     }

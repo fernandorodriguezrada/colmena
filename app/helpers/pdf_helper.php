@@ -1,6 +1,7 @@
 <?php
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../models/Informe.php';
+require_once __DIR__ . '/../models/Components/ComponenteFactory.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -35,9 +36,33 @@ class PdfHelper
     private static function renderTemplate(array $informe, array $beneficiario): string
     {
         $bgB64 = base64_encode(file_get_contents(__DIR__ . '/../../assets/img/pagina.png'));
+        
+        $piezas = Informe::getPiezas($informe['id']);
+        
+        $componentesHtml = self::renderComponentes($piezas);
 
         ob_start();
         require __DIR__ . '/../views/pdf_plantilla.php';
         return ob_get_clean();
+    }
+    
+    private static function renderComponentes(array $piezas): string
+    {
+        if (empty($piezas)) {
+            return '<div class="sin-piezas">El informe se elaborará con el contenido estándar.</div>';
+        }
+        
+        $html = '<div class="componentes-informe">';
+        foreach ($piezas as $pieza) {
+            $componente = ComponenteFactory::createFromArray($pieza);
+            if ($componente) {
+                $html .= '<div class="componente-wrapper" style="margin-bottom: 20pt;">';
+                $html .= $componente->render();
+                $html .= '</div>';
+            }
+        }
+        $html .= '</div>';
+        
+        return $html;
     }
 }

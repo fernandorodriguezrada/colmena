@@ -68,6 +68,8 @@
                 <div class="content"><?= nl2br(htmlspecialchars($informe['observaciones'])) ?></div>
             </div>
 
+            <?= $componentesHtml ?? '<div class="section"><div class="content">El informe se elaborará con el contenido estándar.</div></div>' ?>
+
             <div class="firma">
                 <div class="linea">Firma del Responsable</div>
             </div>

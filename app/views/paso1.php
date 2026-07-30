@@ -3,7 +3,7 @@
     <div class="bg-white p-8 rounded-2xl shadow-lg">
         <div class="flex justify-between items-center mb-8">
             <h2 class="text-3xl font-bold text-verdeOscuro">Paso 1: ¿De quién es el informe?</h2>
-            <span class="bg-naranja text-white px-4 py-1 rounded-full font-bold">1 de 3</span>
+            <span class="bg-naranja text-white px-4 py-1 rounded-full font-bold">1 of 5</span>
         </div>
 
         <?php if (isset($_GET['error'])): ?>

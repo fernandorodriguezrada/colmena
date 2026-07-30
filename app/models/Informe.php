@@ -2,13 +2,64 @@
 require_once __DIR__ . '/../database.php';
 class Informe
 {
-    public static function crear(int $beneficiarioId, int $tipoInformeId, string $motivo, string $observaciones, ?string $tipoPersonalizado = null, ?string $elaboradoPor = null): int
+    private static function tableHasColumn(string $table, string $column): bool
     {
         $db = getDB();
-        $stmt = $db->prepare("INSERT INTO informes (beneficiario_id, tipo_informe_id, tipo_personalizado, motivo, observaciones, elaborado_por) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$beneficiarioId, $tipoInformeId, $tipoPersonalizado, trim($motivo), trim($observaciones), $elaboradoPor]);
+        $stmt = $db->query("SHOW COLUMNS FROM {$table}");
+        $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        return in_array($column, $columns);
+    }
+    
+    public static function crear(int $beneficiarioId, int $tipoInformeId, string $motivo, string $observaciones, ?string $tipoPersonalizado = null, ?string $elaboradoPor = null, ?string $piezasJson = null): int
+    {
+        $db = getDB();
+        $hasPiezasJson = self::tableHasColumn('informes', 'piezas_json');
+        
+        if ($hasPiezasJson) {
+            $stmt = $db->prepare("INSERT INTO informes (beneficiario_id, tipo_informe_id, tipo_personalizado, motivo, observaciones, piezas_json, elaborado_por) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$beneficiarioId, $tipoInformeId, $tipoPersonalizado, trim($motivo), trim($observaciones), $piezasJson, $elaboradoPor]);
+        } else {
+            $stmt = $db->prepare("INSERT INTO informes (beneficiario_id, tipo_informe_id, tipo_personalizado, motivo, observaciones, elaborado_por) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$beneficiarioId, $tipoInformeId, $tipoPersonalizado, trim($motivo), trim($observaciones), $elaboradoPor]);
+        }
         return (int) $db->lastInsertId();
     }
+    
+    public static function actualizarPiezas(int $id, string $piezasJson): void
+    {
+        $db = getDB();
+        $hasPiezasJson = self::tableHasColumn('informes', 'piezas_json');
+        
+        if ($hasPiezasJson) {
+            $stmt = $db->prepare("UPDATE informes SET piezas_json = ? WHERE id = ?");
+            $stmt->execute([$piezasJson, $id]);
+        } else {
+            $_SESSION['temp_piezas_' . $id] = $piezasJson;
+        }
+    }
+    
+    public static function getPiezas(int $id): array
+    {
+        $db = getDB();
+        $hasPiezasJson = self::tableHasColumn('informes', 'piezas_json');
+        
+        if ($hasPiezasJson) {
+            $stmt = $db->prepare("SELECT piezas_json FROM informes WHERE id = ?");
+            $stmt->execute([$id]);
+            $result = $stmt->fetch();
+            
+            if ($result && !empty($result['piezas_json'])) {
+                return json_decode($result['piezas_json'], true) ?? [];
+            }
+        }
+        
+        if (isset($_SESSION['temp_piezas_' . $id])) {
+            return json_decode($_SESSION['temp_piezas_' . $id], true) ?? [];
+        }
+        
+        return [];
+    }
+    
     public static function actualizarRutaPdf(int $id, string $ruta): void
     {
         $db = getDB();

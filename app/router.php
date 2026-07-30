@@ -23,8 +23,20 @@ function routeRequest(): void
         case 'paso3':
             InformeController::paso3();
             break;
+        case 'paso4':
+            InformeController::paso4();
+            break;
+        case 'paso5':
+            InformeController::paso5();
+            break;
         case 'guardar_informe':
             InformeController::guardar();
+            break;
+        case 'guardar_piezas':
+            InformeController::guardarPiezas();
+            break;
+        case 'finalizar':
+            InformeController::finalizar();
             break;
         case 'exito':
             InformeController::exito();
