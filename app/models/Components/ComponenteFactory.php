@@ -46,16 +46,20 @@ class ComponenteFactory
         foreach ($components as $componentData) {
             $componente = self::createFromArray($componentData);
             if ($componente) {
-                $posX = $componentData['posX'] ?? 5;
-                $posY = $componentData['posY'] ?? null;
-                $width = $componentData['width'] ?? 90;
-                $style = "position: absolute; left: {$posX}%; width: {$width}%;";
-                if ($posY !== null) {
-                    $style .= " top: {$posY}%;";
+                if ($componentData['type'] === 'text') {
+                    $html .= $componente->render();
+                } else {
+                    $posX = $componentData['posX'] ?? 5;
+                    $posY = $componentData['posY'] ?? null;
+                    $width = $componentData['width'] ?? 90;
+                    $style = "position: absolute; left: {$posX}%; width: {$width}%;";
+                    if ($posY !== null) {
+                        $style .= " top: {$posY}%;";
+                    }
+                    $html .= '<div class="componente-wrapper" style="' . $style . '">';
+                    $html .= $componente->render();
+                    $html .= '</div>';
                 }
-                $html .= '<div class="componente-wrapper" style="' . $style . '">';
-                $html .= $componente->render();
-                $html .= '</div>';
             }
         }
         return $html;

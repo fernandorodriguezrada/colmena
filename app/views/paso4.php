@@ -2,7 +2,6 @@
 .preview-page {
     position: relative;
     width: 100%;
-    aspect-ratio: 612 / 792;
     background: #fff;
     box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     border-radius: 4px;
@@ -21,7 +20,7 @@
     padding: 57pt 43pt 57pt 85pt;
     box-sizing: border-box;
     width: 100%;
-    min-height: calc(100% - 114pt);
+    min-height: 100%;
     font-family: 'Times', 'Times New Roman', serif;
     font-size: 12pt;
     line-height: 1.5;
@@ -48,6 +47,7 @@
 .preview-page .pdf-collage { display: flex; flex-wrap: wrap; justify-content: center; gap: 4pt; margin: 10pt 0; }
 .preview-page .pdf-collage img { width: calc(50% - 4pt); height: auto; object-fit: cover; }
 .pieza-draggable { position: absolute; cursor: grab; min-height: 20px; box-sizing: border-box; overflow-wrap: break-word; word-wrap: break-word; }
+.pieza-texto { margin-bottom: 10pt; }
 .pieza-draggable:hover { outline: 2px dashed #EF7F31; outline-offset: 2px; }
 .pieza-draggable.dragging { cursor: grabbing; outline: 2px solid #EF7F31; z-index: 999; opacity: 0.85; }
 .pieza-draggable .drag-label { position: absolute; top: -18px; left: 0; font-size: 8pt; background: #EF7F31; color: #fff; padding: 1px 6px; border-radius: 3px; opacity: 0; transition: opacity 0.2s; white-space: nowrap; pointer-events: none; }
@@ -497,6 +497,7 @@ function renderPDFPreview() {
         piezas.forEach(function(p, i) { innerHtml += renderPiezaPreview(p, i); });
     }
     container.innerHTML = '<img class="page-bg" src="assets/img/pagina.png" alt=""><div class="page-content" style="position:relative">' + innerHtml + '</div>';
+    container.style.height = (container.clientWidth * 792 / 612) + 'px';
     container.querySelectorAll('.pieza-draggable').forEach(function(el) {
         el.addEventListener('mousedown', startDrag);
     });
@@ -506,8 +507,7 @@ function renderPiezaPreview(p, idx) {
     var inner;
     switch (p.type) {
         case 'text':
-            inner = '<div class="pdf-content">' + (p.content || '') + '</div>';
-            break;
+            return '<div class="pieza-texto">' + (p.content || '') + '</div>';
         case 'table': {
             var headers = (p.headers || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
             var rows = (p.rows || '').split('\n').filter(Boolean).map(function(r) { return r.split(',').map(function(s) { return s.trim(); }); });
@@ -561,8 +561,8 @@ function renderPiezaPreview(p, idx) {
         default:
             inner = '';
     }
-    var px = p.posX || 5;
-    var py = p.posY || 10;
+    var px = p.posX !== undefined ? p.posX : 5;
+    var py = p.posY !== undefined ? p.posY : 10;
     var pw = p.width || 90;
     return '<div class="pieza-draggable" data-idx="' + idx + '" style="left:' + px + '%; top:' + py + '%; width:' + pw + '%"><span class="drag-label">' + p.type + '</span>' + inner + '</div>';
 }
@@ -925,17 +925,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    var isText = type === 'text';
+    var defaultX = isText ? 0 : 5;
+    var defaultW = isText ? 100 : 90;
     let piezas = JSON.parse(piezasInput.value || '[]');
     if (idx !== '' && piezas[idx]) {
-        pieza.posX = piezas[idx].posX !== undefined ? piezas[idx].posX : 5;
+        pieza.posX = piezas[idx].posX !== undefined ? piezas[idx].posX : defaultX;
         pieza.posY = piezas[idx].posY !== undefined ? piezas[idx].posY : 10 + piezas.length * 18;
-        pieza.width = piezas[idx].width || 90;
+        pieza.width = piezas[idx].width || defaultW;
         piezas[idx] = pieza;
     } else {
-        pieza.posX = 5;
+        pieza.posX = defaultX;
         const pCount = piezas.length;
         pieza.posY = 10 + pCount * 18;
-        pieza.width = 90;
+        pieza.width = defaultW;
         piezas.push(pieza);
     }
 
