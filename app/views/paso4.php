@@ -96,7 +96,7 @@
             </div>
         </div>
 
-        <div class="max-w-3xl bg-white p-8 rounded-2xl shadow-lg flex-1">
+        <div class="max-w-3xl bg-white p-8 rounded-2xl shadow-lg flex-1 min-w-0">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-3xl font-bold text-verdeOscuro">Paso 4: Componer Informe</h2>
                 <span class="bg-naranja text-white px-4 py-1 rounded-full font-bold">4 of 5</span>
@@ -122,7 +122,15 @@
             </a>
             <?php endif; ?>
 
-            <div id="lista-piezas" class="space-y-3 mb-4">
+            <div class="flex items-center gap-3 mb-3">
+                <p class="text-lg font-bold text-gray-700">Piezas añadidas <span id="piezas-count" class="bg-naranja text-white px-2 py-0.5 rounded-full text-sm align-middle">0</span></p>
+                <div class="flex-1"></div>
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="text" id="buscar-pieza" placeholder="Buscar pieza..." class="w-52 pl-8 pr-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:border-naranja focus:outline-none">
+                </div>
+            </div>
+            <div id="lista-piezas" class="space-y-3 max-h-80 overflow-y-auto pr-1 mb-4">
                 <div class="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
                     <i class="fa-solid fa-puzzle-piece text-4xl text-gray-300 mb-2 block"></i>
                     <p class="text-lg text-gray-500">No hay piezas aún.</p>
@@ -453,23 +461,43 @@ function renderPaletaColores() {
 function renderLista() {
     const lista = document.getElementById('lista-piezas');
     const piezas = JSON.parse(piezasInput.value || '[]');
+    const countEl = document.getElementById('piezas-count');
+    const filtro = ((document.getElementById('buscar-pieza') || {}).value || '').trim().toLowerCase();
+
     if (piezas.length === 0) {
         lista.innerHTML = '<div class="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300"><i class="fa-solid fa-puzzle-piece text-5xl text-gray-300 mb-3 block"></i><p class="text-xl text-gray-500 mb-4">No hay piezas aún. Añade la primera pieza abajo.</p></div>';
+        if (countEl) countEl.textContent = '0';
         renderPDFPreview();
         return;
     }
+
+    const visibles = piezas
+        .map((p, i) => ({ p, i }))
+        .filter(({ p }) => !filtro ||
+            p.type.toLowerCase().includes(filtro) ||
+            getResumen(p).toLowerCase().includes(filtro) ||
+            getDetalle(p).toLowerCase().includes(filtro));
+
+    if (countEl) countEl.textContent = filtro ? visibles.length + ' de ' + piezas.length : String(piezas.length);
+
+    if (visibles.length === 0) {
+        lista.innerHTML = '<div class="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300"><i class="fa-solid fa-magnifying-glass text-5xl text-gray-300 mb-3 block"></i><p class="text-xl text-gray-500">Sin resultados para "<span class="font-bold">' + escHtml(filtro) + '</span>".</p></div>';
+        renderPDFPreview();
+        return;
+    }
+
     const typeColors = { text: 'border-l-naranja', table: 'border-l-verdeClaro', chart: 'border-l-azul', image: 'border-l-morado', collage: 'border-l-rosa', firma: 'border-l-verdeOscuro', espacio: 'border-l-gray-500' };
-    lista.innerHTML = piezas.map((p, i) => `
+    lista.innerHTML = visibles.map(({ p, i }) => `
         <div class="pieza-item bg-white border-2 border-gray-200 border-l-8 ${typeColors[p.type] || 'border-l-naranja'} rounded-xl shadow-md p-4 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200" data-idx="${i}">
-            <span class="text-gray-400 text-2xl cursor-move select-none" title="Arrastrar">⋮⋮</span>
-            <div class="flex-1">
-                <div class="flex items-center gap-2">
-                    <span class="bg-naranja text-white px-2 py-1 rounded text-sm font-bold">${p.type.charAt(0).toUpperCase() + p.type.slice(1)}</span>
-                    <span class="text-gray-700 font-medium">${getResumen(p)}</span>
+            <span class="text-gray-400 text-2xl cursor-move select-none flex-shrink-0" title="Arrastrar">⋮⋮</span>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="bg-naranja text-white px-2 py-1 rounded text-sm font-bold flex-shrink-0">${p.type.charAt(0).toUpperCase() + p.type.slice(1)}</span>
+                    <span class="text-gray-700 font-medium truncate">${getResumen(p)}</span>
                 </div>
-                <div class="text-xs text-gray-400 mt-1">${getDetalle(p)}</div>
+                <div class="text-xs text-gray-400 mt-1 truncate">${getDetalle(p)}</div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-shrink-0">
                 <button type="button" class="btn-editar bg-verdeClaro hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow border-b-4 border-green-700 transition-all hover:brightness-110" data-idx="${i}">Editar</button>
                 <button type="button" class="btn-eliminar bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow border-b-4 border-red-700 transition-all hover:brightness-110" data-idx="${i}">Eliminar</button>
             </div>
@@ -574,7 +602,7 @@ function renderPiezaPreview(p, idx) {
             inner = '';
     }
     var px = p.posX !== undefined ? p.posX : 5;
-    var py = p.posY !== undefined ? p.posY : 10;
+    var py = p.posY !== undefined ? Math.min(Math.max(p.posY, 0), 90) : 10;
     var pw = p.width || 90;
     return '<div class="pieza-draggable" data-idx="' + idx + '" style="left:' + px + '%; top:' + py + '%; width:' + pw + '%"><span class="drag-label">' + p.type + '</span>' + inner + '</div>';
 }
@@ -639,8 +667,18 @@ function escHtml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function stripHtml(html) {
+    if (!html) return '';
+    var div = document.createElement('div');
+    div.innerHTML = String(html);
+    return div.textContent || '';
+}
+
 function getResumen(p) {
-    if (p.type === 'text') return p.content?.slice(0, 50) + '...';
+    if (p.type === 'text') {
+        var txt = stripHtml(p.content).replace(/\s+/g, ' ').trim();
+        return txt ? txt.slice(0, 50) + (txt.length > 50 ? '…' : '') : 'Texto vacío';
+    }
     if (p.type === 'table') return `${(p.headers?.split(',').length || 0)} columnas × ${(p.rows?.split('\n').length || 0)} filas`;
     if (p.type === 'chart') {
         var cfg = p.config || {};
@@ -883,6 +921,9 @@ document.addEventListener('DOMContentLoaded', function() {
     renderLista();
     renderPaletaColores();
 
+    const buscarPieza = document.getElementById('buscar-pieza');
+    if (buscarPieza) buscarPieza.addEventListener('input', renderLista);
+
     document.getElementById('btn-cancelar').addEventListener('click', closeModal);
     document.getElementById('btn-guardar-piezas').addEventListener('click', function() {
         document.getElementById('piezas-json-guardar').value = document.getElementById('piezas-json').value;
@@ -956,13 +997,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let piezas = JSON.parse(piezasInput.value || '[]');
     if (idx !== '' && piezas[idx]) {
         pieza.posX = piezas[idx].posX !== undefined ? piezas[idx].posX : defaultX;
-        pieza.posY = piezas[idx].posY !== undefined ? piezas[idx].posY : 10 + piezas.length * 18;
+        pieza.posY = piezas[idx].posY !== undefined ? piezas[idx].posY : Math.min(70, 10 + piezas.length * 18);
         pieza.width = piezas[idx].width || defaultW;
         piezas[idx] = pieza;
     } else {
         pieza.posX = defaultX;
         const pCount = piezas.length;
-        pieza.posY = 10 + pCount * 18;
+        pieza.posY = Math.min(70, 10 + pCount * 18);
         pieza.width = defaultW;
         piezas.push(pieza);
     }
