@@ -21,8 +21,12 @@
             width: 612pt; min-height: 792pt;
         }
         .page-flow {
+            position: relative;
             padding: 110pt 43pt 57pt 85pt;
         }
+        .flujo-contenido { position: relative; z-index: 1; }
+        .componente-wrapper.detras { z-index: 0; }
+        .componente-wrapper.delante { z-index: 2; }
         .data-line {
             text-align: center; font-size: 11pt; margin-bottom: 14pt;
         }
@@ -57,17 +61,19 @@
         <img class="page-bg" src="data:image/png;base64,<?= $bgB64 ?>" alt="">
         <div class="page-content">
             <div class="page-flow">
+                <?= $componentesDetras ?>
 
-                <div class="data-line">
-                    <b>Tipo:</b> <?= htmlspecialchars($informe['tipo_personalizado'] ?: $informe['tipo_nombre']) ?> &nbsp;|&nbsp;
-                    <b>N&deg;:</b> <?= str_pad((string)$informe['id'], 4, '0', STR_PAD_LEFT) ?>
+                <div class="flujo-contenido">
+                    <div class="data-line">
+                        <b>Tipo:</b> <?= htmlspecialchars($informe['tipo_personalizado'] ?: $informe['tipo_nombre']) ?> &nbsp;|&nbsp;
+                        <b>N&deg;:</b> <?= str_pad((string)$informe['id'], 4, '0', STR_PAD_LEFT) ?>
+                    </div>
+
+                    <?= $componentesFlujo ?>
                 </div>
 
-                <?= $componentesFlujo ?>
-
+                <?= $componentesDelante ?>
             </div>
-
-            <?= $componentesAbsolutas ?>
         </div>
     </div>
 </body>

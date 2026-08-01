@@ -40,8 +40,9 @@ class PdfHelper
         $piezas = Informe::getPiezas($informe['id']);
         
         $componentes = self::renderComponentes($piezas);
+        $componentesDetras = $componentes['detras'];
         $componentesFlujo = $componentes['flujo'];
-        $componentesAbsolutas = $componentes['absolutas'];
+        $componentesDelante = $componentes['delante'];
 
         ob_start();
         require __DIR__ . '/../views/pdf_plantilla.php';
@@ -52,31 +53,42 @@ class PdfHelper
     {
         if (empty($piezas)) {
             return [
+                'detras' => '',
                 'flujo' => '<div class="section"><div class="content">El informe se elaborará con el contenido estándar.</div></div>',
-                'absolutas' => '',
+                'delante' => '',
             ];
         }
 
-        $flujoHtml = '';
+        $grupos = ['detras' => [], 'flujo' => [], 'delante' => []];
         foreach ($piezas as $pieza) {
-            $tipo = $pieza['type'] ?? '';
-            if ($tipo === 'text' || $tipo === 'espacio') {
-                $componente = ComponenteFactory::createFromArray($pieza);
-                if ($componente) {
-                    $flujoHtml .= $componente->render();
-                }
+            $layout = $pieza['layout'] ?? 'inline';
+            if ($layout === 'detras') {
+                $grupos['detras'][] = $pieza;
+            } elseif ($layout === 'delante') {
+                $grupos['delante'][] = $pieza;
+            } else {
+                $grupos['flujo'][] = $pieza;
             }
         }
 
-        $absolutas = array_filter($piezas, function ($p) {
-            $t = $p['type'] ?? '';
-            return $t !== 'text' && $t !== 'espacio';
-        });
-        $absolutasHtml = '';
-        if (!empty($absolutas)) {
-            $absolutasHtml = '<div class="componentes-informe">' . ComponenteFactory::renderComponents(array_values($absolutas)) . '</div>';
+        $flujoHtml = '';
+        foreach ($grupos['flujo'] as $pieza) {
+            $componente = ComponenteFactory::createFromArray($pieza);
+            if ($componente) {
+                $flujoHtml .= $componente->render();
+            }
         }
 
-        return ['flujo' => $flujoHtml, 'absolutas' => $absolutasHtml];
+        $detrasHtml = '';
+        if (!empty($grupos['detras'])) {
+            $detrasHtml = '<div class="componentes-informe">' . ComponenteFactory::renderComponents($grupos['detras']) . '</div>';
+        }
+
+        $delanteHtml = '';
+        if (!empty($grupos['delante'])) {
+            $delanteHtml = '<div class="componentes-informe">' . ComponenteFactory::renderComponents($grupos['delante']) . '</div>';
+        }
+
+        return ['detras' => $detrasHtml, 'flujo' => $flujoHtml, 'delante' => $delanteHtml];
     }
 }

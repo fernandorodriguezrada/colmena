@@ -48,22 +48,23 @@ class ComponenteFactory
         foreach ($components as $componentData) {
             $componente = self::createFromArray($componentData);
             if ($componente) {
-                if ($componentData['type'] === 'text' || $componentData['type'] === 'espacio') {
+                $layout = $componentData['layout'] ?? 'inline';
+                if ($layout === 'inline') {
                     $html .= $componente->render();
-                } else {
-                    $posX = $componentData['posX'] ?? 5;
-                    $posY = $componentData['posY'] ?? null;
-                    $width = $componentData['width'] ?? 90;
-                    $left = round($posX * 612 / 100, 2);
-                    $w = round($width * 612 / 100, 2);
-                    $style = "position: absolute; left: {$left}pt; width: {$w}pt;";
-                    if ($posY !== null) {
-                        $style .= " top: " . round($posY * 792 / 100, 2) . "pt;";
-                    }
-                    $html .= '<div class="componente-wrapper" style="' . $style . '">';
-                    $html .= $componente->render();
-                    $html .= '</div>';
+                    continue;
                 }
+                $posX = $componentData['posX'] ?? 5;
+                $posY = $componentData['posY'] ?? null;
+                $width = $componentData['width'] ?? 90;
+                $left = round($posX * 612 / 100, 2);
+                $w = round($width * 612 / 100, 2);
+                $style = "position: absolute; left: {$left}pt; width: {$w}pt;";
+                if ($posY !== null) {
+                    $style .= " top: " . round($posY * 792 / 100, 2) . "pt;";
+                }
+                $html .= '<div class="componente-wrapper ' . $layout . '" style="' . $style . '">';
+                $html .= $componente->render();
+                $html .= '</div>';
             }
         }
         return $html;

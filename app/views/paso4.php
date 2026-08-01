@@ -50,8 +50,13 @@
 .preview-page .pdf-collage { display: flex; flex-wrap: wrap; justify-content: center; gap: 4pt; margin: 10pt 0; }
 .preview-page .pdf-collage img { width: calc(50% - 4pt); height: auto; object-fit: cover; }
 .pieza-draggable { position: absolute; cursor: grab; min-height: 20px; box-sizing: border-box; overflow-wrap: break-word; word-wrap: break-word; }
+.pieza-draggable.detras { z-index: 0; }
+.pieza-draggable.delante { z-index: 2; }
+.pieza-texto, .pieza-espacio, .pieza-inline, .pdf-data-line { position: relative; z-index: 1; }
 .pieza-texto { margin-bottom: 10pt; }
-.pieza-espacio { pointer-events: none; }
+.pieza-espacio { pointer-events: none; border: 1px dashed #d6d6d6; }
+.pieza-inline { width: 100%; margin: 10pt 0; }
+.pieza-inline img, .pieza-inline svg { max-width: 100%; height: auto; }
 .pieza-draggable:hover { outline: 2px dashed #EF7F31; outline-offset: 2px; }
 .pieza-draggable.dragging { cursor: grabbing; outline: 2px solid #EF7F31; z-index: 999; opacity: 0.85; }
 .pieza-draggable .drag-label { position: absolute; top: -18px; left: 0; font-size: 8pt; background: #EF7F31; color: #fff; padding: 1px 6px; border-radius: 3px; opacity: 0; transition: opacity 0.2s; white-space: nowrap; pointer-events: none; }
@@ -516,6 +521,56 @@ function renderLista() {
             renderLista();
         }
     }));
+
+    var dragIdx = null;
+    var overIdx = null;
+
+    function dragEndCleanup() {
+        lista.querySelectorAll('.pieza-item').forEach(function(el) {
+            el.classList.remove('opacity-50', 'border-t-4', 'border-b-4', 'border-naranja');
+        });
+        dragIdx = null;
+        overIdx = null;
+    }
+
+    lista.querySelectorAll('.pieza-item').forEach(function(el) {
+        el.setAttribute('draggable', 'true');
+        el.addEventListener('dragstart', function(e) {
+            dragIdx = parseInt(this.dataset.idx);
+            try { e.dataTransfer.setData('text/plain', String(dragIdx)); } catch (err) {}
+            e.dataTransfer.effectAllowed = 'move';
+            this.classList.add('opacity-50');
+        });
+        el.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            var tIdx = parseInt(this.dataset.idx);
+            if (tIdx === dragIdx) return;
+            var rect = this.getBoundingClientRect();
+            var after = e.clientY > rect.top + rect.height / 2;
+            this.classList.remove('border-t-4', 'border-b-4', 'border-naranja');
+            this.classList.add(after ? 'border-b-4' : 'border-t-4', 'border-naranja');
+            overIdx = { tIdx: tIdx, after: after };
+        });
+        el.addEventListener('dragleave', function(e) {
+            this.classList.remove('border-t-4', 'border-b-4', 'border-naranja');
+        });
+        el.addEventListener('drop', function(e) {
+            e.preventDefault();
+            if (dragIdx === null || !overIdx || overIdx.tIdx === dragIdx) { dragEndCleanup(); return; }
+            var piezas = JSON.parse(piezasInput.value || '[]');
+            var from = dragIdx;
+            var moved = piezas.splice(from, 1)[0];
+            var targetPos = overIdx.tIdx > from ? overIdx.tIdx - 1 : overIdx.tIdx;
+            var insertPos = overIdx.after ? targetPos + 1 : targetPos;
+            insertPos = Math.max(0, Math.min(piezas.length, insertPos));
+            piezas.splice(insertPos, 0, moved);
+            piezasInput.value = JSON.stringify(piezas);
+            dragEndCleanup();
+            renderLista();
+        });
+        el.addEventListener('dragend', dragEndCleanup);
+    });
     renderPDFPreview();
 }
 
@@ -527,8 +582,17 @@ function renderPDFPreview() {
     if (!INFORME_DATA) {
         innerHtml = '<div class="text-center text-gray-400" style="padding:20pt">Primero debes crear el informe en el paso 3</div>';
     } else {
-        innerHtml = '<div class="pdf-data-line"><b>Tipo:</b> ' + escHtml(INFORME_DATA.tipo_personalizado || INFORME_DATA.tipo_nombre || '') + ' &nbsp;|&nbsp; <b>N&deg;:</b> ' + String(INFORME_DATA.id || '').padStart(4, '0') + '</div>';
-        piezas.forEach(function(p, i) { innerHtml += renderPiezaPreview(p, i); });
+        var dataLine = '<div class="pdf-data-line"><b>Tipo:</b> ' + escHtml(INFORME_DATA.tipo_personalizado || INFORME_DATA.tipo_nombre || '') + ' &nbsp;|&nbsp; <b>N&deg;:</b> ' + String(INFORME_DATA.id || '').padStart(4, '0') + '</div>';
+        var detrasHtml = '';
+        var flujoHtml = '';
+        var delanteHtml = '';
+        piezas.forEach(function(p, i) {
+            var r = renderPiezaPreview(p, i);
+            if ((p.layout || 'inline') === 'detras') detrasHtml += r;
+            else if ((p.layout || 'inline') === 'delante') delanteHtml += r;
+            else flujoHtml += r;
+        });
+        innerHtml = dataLine + detrasHtml + flujoHtml + delanteHtml;
     }
     container.innerHTML = '<div class="preview-scaler"><img class="page-bg" src="assets/img/pagina.png" alt=""><div class="page-content" style="position:relative">' + innerHtml + '</div></div>';
     container.style.height = (container.clientWidth * 792 / 612) + 'px';
@@ -601,10 +665,15 @@ function renderPiezaPreview(p, idx) {
         default:
             inner = '';
     }
+    var layout = p.layout || 'inline';
+    if (layout === 'inline') {
+        return '<div class="pieza-inline">' + inner + '</div>';
+    }
     var px = p.posX !== undefined ? p.posX : 5;
     var py = p.posY !== undefined ? Math.min(Math.max(p.posY, 0), 90) : 10;
     var pw = p.width || 90;
-    return '<div class="pieza-draggable" data-idx="' + idx + '" style="left:' + px + '%; top:' + py + '%; width:' + pw + '%"><span class="drag-label">' + p.type + '</span>' + inner + '</div>';
+    var label = p.type + (layout === 'detras' ? ' · detrás' : ' · delante');
+    return '<div class="pieza-draggable ' + layout + '" data-idx="' + idx + '" style="left:' + px + '%; top:' + py + '%; width:' + pw + '%"><span class="drag-label">' + label + '</span>' + inner + '</div>';
 }
 
 var dragState = null;
@@ -695,17 +764,25 @@ function getResumen(p) {
 }
 
 function getDetalle(p) {
-    if (p.type === 'text') return 'Texto libre';
-    if (p.type === 'table') return 'Tabla de datos';
+    var detalles = {
+        text: 'Texto libre',
+        table: 'Tabla de datos',
+        image: 'Imagen única',
+        collage: 'Collage de imágenes',
+        firma: 'Bloque de firma',
+        espacio: 'Espacio en blanco'
+    };
+    var base;
     if (p.type === 'chart') {
         var cfg = p.config || {};
-        return (cfg.kind || 'pie') + ' chart';
+        base = (cfg.kind || 'pie') + ' chart';
+    } else {
+        base = detalles[p.type] || '';
     }
-    if (p.type === 'image') return 'Imagen única';
-    if (p.type === 'collage') return 'Collage de imágenes';
-    if (p.type === 'firma') return 'Bloque de firma';
-    if (p.type === 'espacio') return 'Espacio en blanco';
-    return '';
+    if (p.type === 'text' || p.type === 'espacio') return base;
+    var layout = p.layout || 'inline';
+    var modo = layout === 'inline' ? 'En línea' : (layout === 'detras' ? 'Detrás' : 'Delante');
+    return base + ' · ' + modo;
 }
 
 function setupImageUpload() {
@@ -779,6 +856,24 @@ function openModal(type, idx = null) {
     document.getElementById('modal-type').value = type;
     document.getElementById('modal-idx').value = idx !== null ? idx : '';
     document.getElementById('modal-campos').innerHTML = templates[type];
+    if (type !== 'text' && type !== 'espacio') {
+        var layoutWrap = document.createElement('div');
+        layoutWrap.className = 'mb-4';
+        layoutWrap.innerHTML = '<label class="block text-lg font-bold mb-1">Ajuste de texto</label>' +
+            '<select name="layout" id="pieza-layout" class="w-full p-3 text-lg border-2 border-gray-300 rounded-xl">' +
+            '<option value="inline">En línea</option>' +
+            '<option value="detras">Detrás del texto</option>' +
+            '<option value="delante">Delante del texto</option>' +
+            '</select>' +
+            '<p class="text-xs text-gray-500 mt-1">En línea: ocupa su lugar en el documento, en orden. Detrás/Delante: flota y se arrastra en el preview.</p>';
+        document.getElementById('modal-campos').appendChild(layoutWrap);
+        var idxVal = document.getElementById('modal-idx').value;
+        if (idxVal !== '') {
+            var piezasArr = JSON.parse(piezasInput.value || '[]');
+            var pEdit = piezasArr[parseInt(idxVal)];
+            if (pEdit && pEdit.layout) document.getElementById('pieza-layout').value = pEdit.layout;
+        }
+    }
     document.getElementById('modal-pieza').classList.remove('hidden');
     document.getElementById('modal-pieza').classList.add('flex');
 
@@ -991,7 +1086,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    var isInFlow = type === 'text' || type === 'espacio';
+    var layout = form.get('layout') || 'inline';
+    pieza.layout = layout;
+    var isInFlow = layout === 'inline';
     var defaultX = isInFlow ? 0 : 5;
     var defaultW = isInFlow ? 100 : 90;
     let piezas = JSON.parse(piezasInput.value || '[]');
