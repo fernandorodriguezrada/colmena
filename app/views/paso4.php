@@ -609,7 +609,9 @@ function renderPiezaPreview(p, idx) {
     var inner;
     switch (p.type) {
         case 'text':
-            return '<div class="pieza-texto">' + (p.content || '') + '</div>';
+            var content = p.content || '';
+            content = content.replace(/&nbsp;|&#160;|&#xa0;|\u00a0/g, ' ');
+            return '<div class="pieza-texto">' + content + '</div>';
         case 'espacio':
             return '<div class="pieza-espacio" style="height:' + ((p.config && p.config.height) || 80) + 'px"></div>';
         case 'table': {
