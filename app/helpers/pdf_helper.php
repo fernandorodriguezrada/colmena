@@ -39,30 +39,44 @@ class PdfHelper
         
         $piezas = Informe::getPiezas($informe['id']);
         
-        $componentesHtml = self::renderComponentes($piezas);
+        $componentes = self::renderComponentes($piezas);
+        $componentesFlujo = $componentes['flujo'];
+        $componentesAbsolutas = $componentes['absolutas'];
 
         ob_start();
         require __DIR__ . '/../views/pdf_plantilla.php';
         return ob_get_clean();
     }
     
-    private static function renderComponentes(array $piezas): string
+    private static function renderComponentes(array $piezas): array
     {
         if (empty($piezas)) {
-            return '<div class="sin-piezas">El informe se elaborará con el contenido estándar.</div>';
+            return [
+                'flujo' => '<div class="section"><div class="content">El informe se elaborará con el contenido estándar.</div></div>',
+                'absolutas' => '',
+            ];
         }
-        
-        $html = '<div class="componentes-informe">';
+
+        $flujoHtml = '';
         foreach ($piezas as $pieza) {
-            $componente = ComponenteFactory::createFromArray($pieza);
-            if ($componente) {
-                $html .= '<div class="componente-wrapper" style="margin-bottom: 20pt;">';
-                $html .= $componente->render();
-                $html .= '</div>';
+            $tipo = $pieza['type'] ?? '';
+            if ($tipo === 'text' || $tipo === 'espacio') {
+                $componente = ComponenteFactory::createFromArray($pieza);
+                if ($componente) {
+                    $flujoHtml .= $componente->render();
+                }
             }
         }
-        $html .= '</div>';
-        
-        return $html;
+
+        $absolutas = array_filter($piezas, function ($p) {
+            $t = $p['type'] ?? '';
+            return $t !== 'text' && $t !== 'espacio';
+        });
+        $absolutasHtml = '';
+        if (!empty($absolutas)) {
+            $absolutasHtml = '<div class="componentes-informe">' . ComponenteFactory::renderComponents(array_values($absolutas)) . '</div>';
+        }
+
+        return ['flujo' => $flujoHtml, 'absolutas' => $absolutasHtml];
     }
 }

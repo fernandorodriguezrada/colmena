@@ -7,6 +7,7 @@ require_once __DIR__ . '/GraficoComponente.php';
 require_once __DIR__ . '/ImagenComponente.php';
 require_once __DIR__ . '/CollageComponente.php';
 require_once __DIR__ . '/FirmaComponente.php';
+require_once __DIR__ . '/EspacioComponente.php';
 
 class ComponenteFactory
 {
@@ -17,6 +18,7 @@ class ComponenteFactory
         'image' => ImagenComponente::class,
         'collage' => CollageComponente::class,
         'firma' => FirmaComponente::class,
+        'espacio' => EspacioComponente::class,
     ];
     
     public static function createFromArray(array $data): ?ComponenteInterface
@@ -46,15 +48,17 @@ class ComponenteFactory
         foreach ($components as $componentData) {
             $componente = self::createFromArray($componentData);
             if ($componente) {
-                if ($componentData['type'] === 'text') {
+                if ($componentData['type'] === 'text' || $componentData['type'] === 'espacio') {
                     $html .= $componente->render();
                 } else {
                     $posX = $componentData['posX'] ?? 5;
                     $posY = $componentData['posY'] ?? null;
                     $width = $componentData['width'] ?? 90;
-                    $style = "position: absolute; left: {$posX}%; width: {$width}%;";
+                    $left = round($posX * 612 / 100, 2);
+                    $w = round($width * 612 / 100, 2);
+                    $style = "position: absolute; left: {$left}pt; width: {$w}pt;";
                     if ($posY !== null) {
-                        $style .= " top: {$posY}%;";
+                        $style .= " top: " . round($posY * 792 / 100, 2) . "pt;";
                     }
                     $html .= '<div class="componente-wrapper" style="' . $style . '">';
                     $html .= $componente->render();

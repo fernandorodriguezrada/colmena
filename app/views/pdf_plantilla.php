@@ -18,13 +18,10 @@
         }
         .page-content {
             position: relative; z-index: 1;
-            padding: 57pt 43pt 57pt 85pt;
+            width: 612pt; min-height: 792pt;
         }
-        .doc-date {
-            text-align: right; font-size: 12pt; margin-bottom: 2pt; padding-top: 8pt;
-        }
-        .doc-author {
-            text-align: left; font-size: 12pt; margin-bottom: 14pt;
+        .page-flow {
+            padding: 110pt 43pt 57pt 85pt;
         }
         .data-line {
             text-align: center; font-size: 11pt; margin-bottom: 14pt;
@@ -42,34 +39,35 @@
             width: 240pt; margin: 0 auto;
             padding-top: 4pt; font-size: 10pt; color: #555;
         }
+        .componente-texto { margin-bottom: 10pt; }
+        .componente-texto p { margin: 0 0 8pt 0; text-align: justify; }
+        .componente-espacio { pointer-events: none; }
+        .componente-tabla { margin: 15pt 0; }
+        .componente-grafico { text-align: center; margin: 10pt 0; }
+        .componente-grafico img,
+        .componente-imagen img { max-width: 100%; height: auto; }
+        .componente-imagen { text-align: center; margin: 10pt 0; }
+        .componente-collage { text-align: center; margin: 10pt 0; }
+        .componente-collage img { width: 30%; height: auto; margin: 2pt; }
+        .componente-firma { margin-top: 32pt; text-align: center; }
     </style>
 </head>
 <body>
     <div class="page-wrap">
         <img class="page-bg" src="data:image/png;base64,<?= $bgB64 ?>" alt="">
         <div class="page-content">
+            <div class="page-flow">
 
-            <div class="doc-date">Guatire, <?= date('d/m/Y') ?></div>
-            <div class="doc-author"><?= nl2br(htmlspecialchars($informe['elaborado_por'])) ?></div>
+                <div class="data-line">
+                    <b>Tipo:</b> <?= htmlspecialchars($informe['tipo_personalizado'] ?: $informe['tipo_nombre']) ?> &nbsp;|&nbsp;
+                    <b>N&deg;:</b> <?= str_pad((string)$informe['id'], 4, '0', STR_PAD_LEFT) ?>
+                </div>
 
-            <div class="data-line">
-                <b>Tipo:</b> <?= htmlspecialchars($informe['tipo_personalizado'] ?: $informe['tipo_nombre']) ?> &nbsp;|&nbsp;
-                <b>Fecha:</b> <?= date('d/m/Y') ?> &nbsp;|&nbsp;
-                <b>N&deg;:</b> <?= str_pad((string)$informe['id'], 4, '0', STR_PAD_LEFT) ?>
+                <?= $componentesFlujo ?>
+
             </div>
 
-            <div class="section">
-                <h3>Motivo</h3>
-                <div class="content"><?= nl2br(htmlspecialchars($informe['motivo'])) ?></div>
-            </div>
-
-            <div class="section">
-                <h3>Observaciones</h3>
-                <div class="content"><?= nl2br(htmlspecialchars($informe['observaciones'])) ?></div>
-            </div>
-
-            <?= $componentesHtml ?? '<div class="section"><div class="content">El informe se elaborará con el contenido estándar.</div></div>' ?>
-
+            <?= $componentesAbsolutas ?>
         </div>
     </div>
 </body>
