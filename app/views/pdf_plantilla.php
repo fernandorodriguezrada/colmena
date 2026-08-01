@@ -7,7 +7,7 @@
         body {
             margin: 0; padding: 0;
             font-family: 'Times', 'Times New Roman', serif;
-            font-size: 12pt;
+            font-size: 13.5pt;
             color: #000;
             line-height: 1.5;
         }
@@ -28,14 +28,14 @@
         .componente-wrapper.detras { z-index: 0; }
         .componente-wrapper.delante { z-index: 2; }
         .data-line {
-            text-align: center; font-size: 11pt; margin-bottom: 14pt;
+            text-align: center; font-size: 13.5pt; margin-bottom: 14pt;
         }
         .section { margin-bottom: 10pt; }
         .section h3 {
-            font-size: 12pt; font-weight: bold; margin-bottom: 4pt;
+            font-size: 13.5pt; font-weight: bold; margin-bottom: 4pt;
         }
         .section .content {
-            font-size: 12pt; text-align: justify; text-indent: 2em;
+            font-size: 13.5pt; text-align: justify; text-indent: 2em;
         }
         .firma { margin-top: 32pt; text-align: center; }
         .firma .linea {

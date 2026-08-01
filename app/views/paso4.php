@@ -27,14 +27,14 @@
     width: 816px;
     min-height: 1056px;
     font-family: 'Times', 'Times New Roman', serif;
-    font-size: 12pt;
+    font-size: 13.5pt;
     line-height: 1.5;
     color: #000;
 }
-.preview-page .pdf-data-line { text-align: center; font-size: 11pt; margin-bottom: 14pt; }
+.preview-page .pdf-data-line { text-align: center; font-size: 13.5pt; margin-bottom: 14pt; }
 .preview-page .pdf-section { margin-bottom: 10pt; }
-.preview-page .pdf-section h3 { font-size: 12pt; font-weight: bold; margin-bottom: 4pt; }
-.preview-page .pdf-content { font-size: 12pt; text-align: justify; overflow-wrap: break-word; word-wrap: break-word; }
+.preview-page .pdf-section h3 { font-size: 13.5pt; font-weight: bold; margin-bottom: 4pt; }
+.preview-page .pdf-content { font-size: 13.5pt; text-align: justify; overflow-wrap: break-word; word-wrap: break-word; }
 .preview-page .pdf-firma { margin-top: 32pt; text-align: center; }
 .preview-page .pdf-linea { border-top: 1px solid #000; width: 240pt; margin: 0 auto; padding-top: 4pt; font-size: 10pt; color: #555; }
 .preview-page .pdf-table { width:100%; border-collapse: collapse; margin: 10pt 0; }
@@ -274,7 +274,7 @@ const templates = {
             <button type="button" data-cmd="insertUnorderedList" class="toolbar-btn w-8 h-8 rounded hover:bg-gray-300 text-xs" title="Lista"><i class="fa-solid fa-list"></i></button>
             <button type="button" data-cmd="insertOrderedList" class="toolbar-btn w-8 h-8 rounded hover:bg-gray-300 text-xs" title="Lista numerada"><i class="fa-solid fa-list-ol"></i></button>
         </div>
-        <div id="text-editor" contenteditable="true" class="w-full p-4 text-base border-2 border-gray-300 rounded-b-xl focus:outline-none focus:border-verdeOscuro min-h-[200px] bg-white" style="white-space:pre-wrap"></div></div>`,
+        <div id="text-editor" contenteditable="true" class="w-full p-4 text-base border-2 border-gray-300 rounded-b-xl focus:outline-none focus:border-verdeOscuro min-h-[200px] bg-white" style="white-space:pre-wrap; overflow-wrap:break-word"></div></div>`,
     table: `<div class="mb-4"><label class="block text-lg font-bold mb-1">Cabeceras (separadas por coma)</label>
         <input name="headers" class="w-full p-3 text-lg border-2 border-gray-300 rounded-xl" placeholder="Nombre, Edad, Diagnóstico"></div>
         <div class="mb-4"><label class="block text-lg font-bold mb-1">Filas (una por línea, valores separados por coma)</label>
@@ -905,7 +905,7 @@ function openModal(type, idx = null) {
             const idxVal = parseInt(document.getElementById('modal-idx').value);
             const p = piezas[idxVal];
             if (p && p.content) {
-                document.getElementById('text-editor').innerHTML = p.content;
+                document.getElementById('text-editor').innerHTML = cleanOfficeContent(p.content);
             }
         }
         setTimeout(updateToolbarActive, 50);
@@ -968,6 +968,23 @@ function initTextToolbar() {
     if (editor) {
         editor.addEventListener('mouseup', updateToolbarActive);
         editor.addEventListener('keyup', updateToolbarActive);
+        editor.addEventListener('paste', handleEditorPaste);
+    }
+}
+
+function cleanOfficeContent(s) {
+    return String(s || '').replace(/&nbsp;|&#160;|&#xa0;|\u00a0/g, ' ');
+}
+
+function handleEditorPaste(e) {
+    var cd = e.clipboardData || window.clipboardData;
+    if (!cd) return;
+    e.preventDefault();
+    var html = cd.getData('text/html');
+    if (html) {
+        document.execCommand('insertHTML', false, cleanOfficeContent(html));
+    } else {
+        document.execCommand('insertText', false, cd.getData('text/plain'));
     }
 }
 
@@ -1052,7 +1069,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (type === 'text') {
         var editor = document.getElementById('text-editor');
-        if (editor) pieza.content = editor.innerHTML;
+        if (editor) pieza.content = cleanOfficeContent(editor.innerHTML);
     }
 
     if (type === 'chart') {
