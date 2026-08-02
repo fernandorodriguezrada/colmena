@@ -1,5 +1,12 @@
 <?php $ocultarFooter = true; ?>
 <style>main { max-width: none !important; }
+.preview-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 8px 0;
+}
 .preview-page {
     position: relative;
     width: 100%;
@@ -100,6 +107,10 @@
                     <i class="fa-solid fa-arrows-v text-3xl text-crema opacity-80" style="text-shadow: 0 2px 3px rgba(0,0,0,0.25);"></i>
                     <span class="text-sm font-bold mt-1.5">Espacio</span>
                 </button>
+                <button type="button" class="btn-add-pieza bg-gray-100 border-b-4 border-gray-400 shadow-md p-4 rounded-xl text-gray-800 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0.5 transition-all duration-150 flex flex-col items-center" data-type="pagina">
+                    <i class="fa-solid fa-file-circle-plus text-3xl text-gray-700"></i>
+                    <span class="text-sm font-bold mt-1.5">Página</span>
+                </button>
             </div>
         </div>
 
@@ -159,12 +170,7 @@
         </div>
 
         <div class="flex-[1.7] min-w-0 hidden lg:flex flex-col overflow-y-auto min-h-0 [scrollbar-gutter:stable]">
-            <div id="pdf-preview" class="preview-page" style="margin:auto">
-                <img class="page-bg" src="assets/img/pagina.png" alt="">
-                <div class="page-content">
-                    <div class="text-center text-gray-400">Añade piezas para ver la previsualización</div>
-                </div>
-            </div>
+            <div id="pdf-preview" class="preview-container" style="margin:auto"></div>
         </div>
     </div>
 
@@ -341,7 +347,10 @@ const templates = {
         <div class="mb-2 flex items-center gap-2">
             <input type="range" name="height" min="20" max="400" value="80" class="w-full slider-naranja" id="espacio-height-range">
             <span id="espacio-height-label" class="text-sm text-gray-600 w-12 text-right">80px</span>
-        </div></div>`
+        </div></div>`,
+    pagina: `<div class="mb-4">
+        <p class="text-lg text-gray-600 leading-relaxed">Se añadirá una <b>nueva página</b> al informe. Todo el contenido que agregues <b>después</b> de esta pieza se colocará en la hoja nueva.</p>
+    </div>`
 };
 
 function generateSimpleChartSVG(kind, labels, data, colors, width, height) {
@@ -492,7 +501,7 @@ function renderLista() {
         return;
     }
 
-    const typeColors = { text: 'border-l-naranja', table: 'border-l-verdeClaro', chart: 'border-l-azul', image: 'border-l-morado', collage: 'border-l-rosa', firma: 'border-l-verdeOscuro', espacio: 'border-l-gray-500' };
+    const typeColors = { text: 'border-l-naranja', table: 'border-l-verdeClaro', chart: 'border-l-azul', image: 'border-l-morado', collage: 'border-l-rosa', firma: 'border-l-verdeOscuro', espacio: 'border-l-gray-500', pagina: 'border-l-gray-400' };
     lista.innerHTML = visibles.map(({ p, i }) => `
         <div class="pieza-item bg-white border-2 border-gray-200 border-l-8 ${typeColors[p.type] || 'border-l-naranja'} rounded-xl shadow-md p-4 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200" data-idx="${i}">
             <span class="text-gray-400 text-2xl cursor-move select-none flex-shrink-0" title="Arrastrar">⋮⋮</span>
@@ -579,33 +588,43 @@ function renderPDFPreview() {
     const container = document.getElementById('pdf-preview');
     if (!container) return;
     const piezas = JSON.parse(piezasInput.value || '[]');
-    let innerHtml;
+    var paginas = [];
     if (!INFORME_DATA) {
-        innerHtml = '<div class="text-center text-gray-400" style="padding:20pt">Primero debes crear el informe en el paso 3</div>';
+        paginas.push('<div class="text-center text-gray-400" style="padding:20pt">Primero debes crear el informe en el paso 3</div>');
     } else {
-        var dataLine = '<div class="pdf-data-line"><b>Tipo:</b> ' + escHtml(INFORME_DATA.tipo_personalizado || INFORME_DATA.tipo_nombre || '') + ' &nbsp;|&nbsp; <b>N&deg;:</b> ' + String(INFORME_DATA.id || '').padStart(4, '0') + '</div>';
-        var detrasHtml = '';
-        var flujoHtml = '';
-        var delanteHtml = '';
+        var page = { detras: [], flujo: [], delante: [] };
+        var flush = function() {
+            var dataLine = '';
+            if (paginas.length === 0) {
+                dataLine = '<div class="pdf-data-line"><b>Tipo:</b> ' + escHtml(INFORME_DATA.tipo_personalizado || INFORME_DATA.tipo_nombre || '') + ' &nbsp;|&nbsp; <b>N&deg;:</b> ' + String(INFORME_DATA.id || '').padStart(4, '0') + '</div>';
+            }
+            var detrasHtml = page.detras.map(function(t) { return renderPiezaPreview(t[0], t[1]); }).join('');
+            var flujoHtml = page.flujo.map(function(t) { return renderPiezaPreview(t[0], t[1]); }).join('');
+            var delanteHtml = page.delante.map(function(t) { return renderPiezaPreview(t[0], t[1]); }).join('');
+            paginas.push(dataLine + detrasHtml + flujoHtml + delanteHtml);
+            page = { detras: [], flujo: [], delante: [] };
+        };
         piezas.forEach(function(p, i) {
-            var r = renderPiezaPreview(p, i);
-            if ((p.layout || 'inline') === 'detras') detrasHtml += r;
-            else if ((p.layout || 'inline') === 'delante') delanteHtml += r;
-            else flujoHtml += r;
+            if (p.type === 'pagina') { flush(); return; }
+            var layout = p.layout || 'inline';
+            if (layout === 'detras') page.detras.push([p, i]);
+            else if (layout === 'delante') page.delante.push([p, i]);
+            else page.flujo.push([p, i]);
         });
-        innerHtml = dataLine + detrasHtml + flujoHtml + delanteHtml;
+        flush();
     }
-    container.innerHTML = '<div class="preview-scaler"><img class="page-bg" src="assets/img/pagina.png" alt=""><div class="page-content" style="position:relative">' + innerHtml + '</div></div>';
     var host = container.parentElement;
     var scale = Math.min(1, (host.clientWidth - 16) / 816);
     scale = Math.max(0.15, scale);
-    container.style.width = Math.round(816 * scale) + 'px';
-    container.style.height = Math.round(1056 * scale) + 'px';
-    var scaler = container.querySelector('.preview-scaler');
-    if (scaler) {
-        scaler.style.transform = 'scale(' + scale + ')';
-        scaler.style.transformOrigin = '0 0';
-    }
+    var pw = Math.round(816 * scale) + 'px';
+    var ph = Math.round(1056 * scale) + 'px';
+    container.innerHTML = paginas.map(function(innerHtml) {
+        return '<div class="preview-page" style="width:' + pw + ';height:' + ph + '">' +
+               '<div class="preview-scaler" style="transform:scale(' + scale + ');transform-origin:0 0">' +
+               '<img class="page-bg" src="assets/img/pagina.png" alt="">' +
+               '<div class="page-content" style="position:relative">' + innerHtml + '</div>' +
+               '</div></div>';
+    }).join('');
     container.querySelectorAll('.pieza-draggable').forEach(function(el) {
         el.addEventListener('mousedown', startDrag);
     });
@@ -621,6 +640,8 @@ function renderPiezaPreview(p, idx) {
         case 'espacio':
             var espH = (p.config && p.config.height) || p.height || 80;
             return '<div class="pieza-espacio" style="height:' + espH + 'px"></div>';
+        case 'pagina':
+            return '';
         case 'table': {
             var headers = (p.headers || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
             var rows = (p.rows || '').split('\n').filter(Boolean).map(function(r) { return r.split(',').map(function(s) { return s.trim(); }); });
@@ -690,7 +711,7 @@ var dragState = null;
 function startDrag(e) {
     if (e.button !== 0) return;
     var el = e.currentTarget;
-    var pageEl = document.querySelector('.preview-page');
+    var pageEl = el.closest('.preview-page');
     var pageRect = pageEl.getBoundingClientRect();
     var pctX = ((e.clientX - pageRect.left) / pageRect.width) * 100;
     var pctY = ((e.clientY - pageRect.top) / pageRect.height) * 100;
@@ -769,6 +790,7 @@ function getResumen(p) {
         return (cfg.nombre || p.nombre || '') + ' — ' + (cfg.titulo || p.titulo || 'sin cargo');
     }
     if (p.type === 'espacio') return ((p.config && p.config.height) || 80) + 'px de espacio';
+    if (p.type === 'pagina') return 'Nueva página';
     return '';
 }
 
@@ -779,7 +801,8 @@ function getDetalle(p) {
         image: 'Imagen única',
         collage: 'Collage de imágenes',
         firma: 'Bloque de firma',
-        espacio: 'Espacio en blanco'
+        espacio: 'Espacio en blanco',
+        pagina: 'Nueva página del informe'
     };
     var base;
     if (p.type === 'chart') {
@@ -788,7 +811,7 @@ function getDetalle(p) {
     } else {
         base = detalles[p.type] || '';
     }
-    if (p.type === 'text' || p.type === 'espacio') return base;
+    if (p.type === 'text' || p.type === 'espacio' || p.type === 'pagina') return base;
     var layout = p.layout || 'inline';
     var modo = layout === 'inline' ? 'En línea' : (layout === 'detras' ? 'Detrás' : 'Delante');
     return base + ' · ' + modo;
@@ -865,7 +888,7 @@ function openModal(type, idx = null) {
     document.getElementById('modal-type').value = type;
     document.getElementById('modal-idx').value = idx !== null ? idx : '';
     document.getElementById('modal-campos').innerHTML = templates[type];
-    if (type !== 'text' && type !== 'espacio') {
+    if (type !== 'text' && type !== 'espacio' && type !== 'pagina') {
         var layoutWrap = document.createElement('div');
         layoutWrap.className = 'mb-4';
         layoutWrap.innerHTML = '<label class="block text-lg font-bold mb-1">Ajuste de texto</label>' +

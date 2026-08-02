@@ -8,6 +8,7 @@ require_once __DIR__ . '/ImagenComponente.php';
 require_once __DIR__ . '/CollageComponente.php';
 require_once __DIR__ . '/FirmaComponente.php';
 require_once __DIR__ . '/EspacioComponente.php';
+require_once __DIR__ . '/PaginaComponente.php';
 
 class ComponenteFactory
 {
@@ -19,6 +20,7 @@ class ComponenteFactory
         'collage' => CollageComponente::class,
         'firma' => FirmaComponente::class,
         'espacio' => EspacioComponente::class,
+        'pagina' => PaginaComponente::class,
     ];
     
     public static function createFromArray(array $data): ?ComponenteInterface

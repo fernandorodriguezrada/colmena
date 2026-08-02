@@ -39,10 +39,7 @@ class PdfHelper
         
         $piezas = Informe::getPiezas($informe['id']);
         
-        $componentes = self::renderComponentes($piezas);
-        $componentesDetras = $componentes['detras'];
-        $componentesFlujo = $componentes['flujo'];
-        $componentesDelante = $componentes['delante'];
+        $paginas = self::renderComponentes($piezas);
 
         ob_start();
         require __DIR__ . '/../views/pdf_plantilla.php';
@@ -52,15 +49,43 @@ class PdfHelper
     private static function renderComponentes(array $piezas): array
     {
         if (empty($piezas)) {
-            return [
+            return [[
                 'detras' => '',
                 'flujo' => '<div class="section"><div class="content">El informe se elaborará con el contenido estándar.</div></div>',
                 'delante' => '',
-            ];
+            ]];
         }
 
+        $paginas = [];
         $grupos = ['detras' => [], 'flujo' => [], 'delante' => []];
+        $flush = function () use (&$paginas, &$grupos) {
+            $flujoHtml = '';
+            foreach ($grupos['flujo'] as $pieza) {
+                $componente = ComponenteFactory::createFromArray($pieza);
+                if ($componente) {
+                    $flujoHtml .= $componente->render();
+                }
+            }
+
+            $detrasHtml = '';
+            if (!empty($grupos['detras'])) {
+                $detrasHtml = '<div class="componentes-informe">' . ComponenteFactory::renderComponents($grupos['detras']) . '</div>';
+            }
+
+            $delanteHtml = '';
+            if (!empty($grupos['delante'])) {
+                $delanteHtml = '<div class="componentes-informe">' . ComponenteFactory::renderComponents($grupos['delante']) . '</div>';
+            }
+
+            $paginas[] = ['detras' => $detrasHtml, 'flujo' => $flujoHtml, 'delante' => $delanteHtml];
+            $grupos = ['detras' => [], 'flujo' => [], 'delante' => []];
+        };
+
         foreach ($piezas as $pieza) {
+            if (($pieza['type'] ?? null) === 'pagina') {
+                $flush();
+                continue;
+            }
             $layout = $pieza['layout'] ?? 'inline';
             if ($layout === 'detras') {
                 $grupos['detras'][] = $pieza;
@@ -70,25 +95,8 @@ class PdfHelper
                 $grupos['flujo'][] = $pieza;
             }
         }
+        $flush();
 
-        $flujoHtml = '';
-        foreach ($grupos['flujo'] as $pieza) {
-            $componente = ComponenteFactory::createFromArray($pieza);
-            if ($componente) {
-                $flujoHtml .= $componente->render();
-            }
-        }
-
-        $detrasHtml = '';
-        if (!empty($grupos['detras'])) {
-            $detrasHtml = '<div class="componentes-informe">' . ComponenteFactory::renderComponents($grupos['detras']) . '</div>';
-        }
-
-        $delanteHtml = '';
-        if (!empty($grupos['delante'])) {
-            $delanteHtml = '<div class="componentes-informe">' . ComponenteFactory::renderComponents($grupos['delante']) . '</div>';
-        }
-
-        return ['detras' => $detrasHtml, 'flujo' => $flujoHtml, 'delante' => $delanteHtml];
+        return $paginas;
     }
 }

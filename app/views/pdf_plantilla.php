@@ -12,6 +12,7 @@
             line-height: 1.5;
         }
         .page-wrap { position: relative; width: 612pt; min-height: 792pt; }
+        .page-wrap + .page-wrap { page-break-before: always; }
         .page-bg {
             position: absolute; top: 0; left: 0;
             width: 612pt; height: 792pt; z-index: -1;
@@ -57,24 +58,30 @@
     </style>
 </head>
 <body>
+    <?php $paginaIdx = 0; ?>
+    <?php foreach ($paginas as $pagina): ?>
     <div class="page-wrap">
         <img class="page-bg" src="data:image/png;base64,<?= $bgB64 ?>" alt="">
         <div class="page-content">
             <div class="page-flow">
-                <?= $componentesDetras ?>
+                <?= $pagina['detras'] ?>
 
                 <div class="flujo-contenido">
+                    <?php if ($paginaIdx === 0): ?>
                     <div class="data-line">
                         <b>Tipo:</b> <?= htmlspecialchars($informe['tipo_personalizado'] ?: $informe['tipo_nombre']) ?> &nbsp;|&nbsp;
                         <b>N&deg;:</b> <?= str_pad((string)$informe['id'], 4, '0', STR_PAD_LEFT) ?>
                     </div>
+                    <?php endif; ?>
 
-                    <?= $componentesFlujo ?>
+                    <?= $pagina['flujo'] ?>
                 </div>
 
-                <?= $componentesDelante ?>
+                <?= $pagina['delante'] ?>
             </div>
         </div>
     </div>
+    <?php $paginaIdx++; ?>
+    <?php endforeach; ?>
 </body>
 </html>
