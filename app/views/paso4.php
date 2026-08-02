@@ -189,7 +189,7 @@
 </div>
 
 <style>
-#chart-size-slider {
+.slider-naranja {
     -webkit-appearance: none;
     appearance: none;
     height: 8px;
@@ -197,7 +197,7 @@
     border-radius: 4px;
     outline: none;
 }
-#chart-size-slider::-webkit-slider-thumb {
+.slider-naranja::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 20px;
@@ -209,10 +209,10 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     transition: transform 0.15s;
 }
-#chart-size-slider::-webkit-slider-thumb:hover {
+.slider-naranja::-webkit-slider-thumb:hover {
     transform: scale(1.15);
 }
-#chart-size-slider::-moz-range-thumb {
+.slider-naranja::-moz-range-thumb {
     width: 20px;
     height: 20px;
     border-radius: 50%;
@@ -305,7 +305,7 @@ const templates = {
         <div class="flex flex-col">
             <label class="block text-lg font-bold mb-2">Vista previa</label>
             <div class="mb-2 flex items-center gap-2">
-                <input type="range" id="chart-size-slider" min="180" max="400" value="280" class="w-full">
+                <input type="range" id="chart-size-slider" min="180" max="400" value="280" class="w-full slider-naranja">
                 <span id="chart-size-label" class="text-sm text-gray-600 w-12 text-right">280px</span>
             </div>
             <div class="flex-1 w-full bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-center min-h-[300px]">
@@ -339,8 +339,10 @@ const templates = {
         <div class="mb-4"><label class="block text-lg font-bold mb-1">Cargo (opcional)</label>
         <input name="titulo" class="w-full p-3 text-lg border-2 border-gray-300 rounded-xl" placeholder="Directora Ejecutiva"></div>`,
     espacio: `<div class="mb-4"><label class="block text-lg font-bold mb-1">Altura del espacio</label>
-        <input type="range" name="height" min="20" max="400" value="80" class="w-full" id="espacio-height-range">
-        <div class="text-center text-xl font-bold text-gray-600" id="espacio-height-label">80px</div></div>`
+        <div class="mb-2 flex items-center gap-2">
+            <input type="range" name="height" min="20" max="400" value="80" class="w-full slider-naranja" id="espacio-height-range">
+            <span id="espacio-height-label" class="text-sm text-gray-600 w-12 text-right">80px</span>
+        </div></div>`
 };
 
 function generateSimpleChartSVG(kind, labels, data, colors, width, height) {
@@ -613,7 +615,8 @@ function renderPiezaPreview(p, idx) {
             content = content.replace(/&nbsp;|&#160;|&#xa0;|\u00a0/g, ' ');
             return '<div class="pieza-texto">' + content + '</div>';
         case 'espacio':
-            return '<div class="pieza-espacio" style="height:' + ((p.config && p.config.height) || 80) + 'px"></div>';
+            var espH = (p.config && p.config.height) || p.height || 80;
+            return '<div class="pieza-espacio" style="height:' + espH + 'px"></div>';
         case 'table': {
             var headers = (p.headers || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
             var rows = (p.rows || '').split('\n').filter(Boolean).map(function(r) { return r.split(',').map(function(s) { return s.trim(); }); });
@@ -912,6 +915,18 @@ function openModal(type, idx = null) {
     }
     if (type === 'image') setupImageUpload();
     if (type === 'collage') setupCollageUpload();
+    if (type === 'espacio') {
+        if (document.getElementById('modal-idx').value !== '') {
+            const piezas = JSON.parse(piezasInput.value || '[]');
+            const idxVal = parseInt(document.getElementById('modal-idx').value);
+            const p = piezas[idxVal];
+            if (p) {
+                const h = (p.config && p.config.height) || p.height || 80;
+                document.getElementById('espacio-height-range').value = h;
+                document.getElementById('espacio-height-label').textContent = h + 'px';
+            }
+        }
+    }
 }
 
 function closeModal() {
@@ -1103,6 +1118,12 @@ document.addEventListener('DOMContentLoaded', function() {
             pieza.config.image_base64 = window.previewImg.src.split(',')[1];
             pieza.config.mime = 'png';
         }
+    }
+
+    if (type === 'espacio') {
+        var espH = parseInt(document.getElementById('espacio-height-range').value) || 80;
+        pieza.config = { height: espH };
+        delete pieza.height;
     }
 
     var layout = form.get('layout') || 'inline';
