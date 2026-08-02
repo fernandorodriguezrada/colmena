@@ -63,11 +63,11 @@
 .pieza-draggable:hover .drag-label { opacity: 1; }
 .toolbar-btn.active { background: #EF7F31 !important; color: #fff !important; }
 </style>
-<div class="pantalla px-8">
-    <a href="index.php?action=paso3" class="text-naranja font-bold mb-4 inline-block"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+<div class="pantalla px-8 h-full flex flex-col min-h-0">
+    <a href="index.php?action=paso3" class="text-naranja font-bold mb-4 inline-block shrink-0"><i class="fa-solid fa-arrow-left"></i> Volver</a>
 
-    <div class="flex gap-8 items-start">
-        <div class="w-80 flex-shrink-0">
+    <div class="flex gap-8 items-stretch flex-1 min-h-0">
+        <div class="w-80 flex-shrink-0 overflow-y-auto min-h-0">
             <p class="text-xl text-gray-700 font-bold mb-4">Añadir piezas</p>
             <div class="grid grid-cols-2 gap-4">
                 <button type="button" class="btn-add-pieza bg-naranja border-b-4 border-orange-700 shadow-md p-4 rounded-xl text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0.5 transition-all duration-150 flex flex-col items-center" data-type="text">
@@ -101,33 +101,29 @@
             </div>
         </div>
 
-        <div class="max-w-3xl bg-white p-8 rounded-2xl shadow-lg flex-1 min-w-0">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-3xl font-bold text-verdeOscuro">Paso 4: Componer Informe</h2>
-                <span class="bg-naranja text-white px-4 py-1 rounded-full font-bold">4 of 5</span>
-            </div>
-
-            <div class="bg-crema p-4 rounded-lg border border-gray-200 mb-6">
-                <p class="text-lg"><strong>Beneficiario:</strong> <span class="text-verdeOscuro font-bold"><?= htmlspecialchars($beneficiario['nombre']) ?></span></p>
-                <?php if ($tipoPersonalizado): ?>
-                <p class="text-lg"><strong>Tipo:</strong> <span class="text-naranja font-bold"><?= htmlspecialchars($tipoPersonalizado) ?></span></p>
-                <?php endif; ?>
+        <div class="max-w-3xl tarjeta-compacta bg-white p-8 rounded-2xl shadow-lg flex-1 min-w-0 self-stretch min-h-0 flex flex-col overflow-y-auto">
+            <div class="encabezado-paso flex justify-between items-center mb-6 shrink-0">
+                <h2 class="titulo-paso text-3xl font-bold text-verdeOscuro">Paso 4: Componer Informe</h2>
+                <div class="flex items-center gap-3 shrink-0">
+                    <?php require __DIR__ . '/partials/beneficiario_info.php'; ?>
+                    <span class="bg-naranja text-white px-4 py-1 rounded-full font-bold">4 of 5</span>
+                </div>
             </div>
 
             <input type="hidden" name="informe_id" id="informe-id" value="<?= $informeId ?? '' ?>">
             <input type="hidden" name="piezas_json" id="piezas-json" value='<?= htmlspecialchars(json_encode($piezas)) ?>'>
 
             <?php if (empty($informeId)): ?>
-            <div class="bg-red-50 border border-red-300 text-rojo p-4 rounded-xl mb-6 flex items-center gap-3">
+            <div class="bg-red-50 border border-red-300 text-rojo p-4 rounded-xl mb-6 flex items-center gap-3 shrink-0">
                 <i class="fa-solid fa-exclamation-circle text-xl"></i>
                 <span>El informe no está creado. Vuelve al paso 3 para continuar.</span>
             </div>
-            <a href="index.php?action=paso3" class="w-full bg-naranja hover:bg-orange-600 text-white text-xl font-bold py-3 px-6 rounded-xl text-center inline-block mb-4">
+            <a href="index.php?action=paso3" class="w-full bg-naranja hover:bg-orange-600 text-white text-xl font-bold py-3 px-6 rounded-xl text-center inline-block mb-4 shrink-0">
                 Volver al Paso 3
             </a>
             <?php endif; ?>
 
-            <div class="flex items-center gap-3 mb-3">
+            <div class="flex items-center gap-3 mb-3 shrink-0">
                 <p class="text-lg font-bold text-gray-700">Piezas añadidas <span id="piezas-count" class="bg-naranja text-white px-2 py-0.5 rounded-full text-sm align-middle">0</span></p>
                 <div class="flex-1"></div>
                 <div class="relative">
@@ -135,14 +131,15 @@
                     <input type="text" id="buscar-pieza" placeholder="Buscar pieza..." class="w-52 pl-8 pr-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:border-naranja focus:outline-none">
                 </div>
             </div>
-            <div id="lista-piezas" class="space-y-3 max-h-80 overflow-y-auto pr-1 mb-4">
-                <div class="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                    <i class="fa-solid fa-puzzle-piece text-4xl text-gray-300 mb-2 block"></i>
-                    <p class="text-lg text-gray-500">No hay piezas aún.</p>
+            <div id="lista-piezas" class="space-y-3 overflow-y-auto pr-1 mb-4 flex-1 min-h-0">
+                <div class="h-full min-h-40 text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
+                    <i class="fa-solid fa-puzzle-piece text-6xl text-gray-300 mb-4 block"></i>
+                    <p class="text-2xl text-gray-500 mb-2">No hay piezas aún.</p>
+                    <p class="text-gray-400">Añade la primera pieza con los botones de la izquierda.</p>
                 </div>
             </div>
 
-            <form id="guardar-piezas-form" method="POST" action="index.php?action=guardar_piezas" class="mb-3">
+            <form id="guardar-piezas-form" method="POST" action="index.php?action=guardar_piezas" class="mb-3 shrink-0">
                 <input type="hidden" name="informe_id" value="<?= $informeId ?? '' ?>">
                 <input type="hidden" name="piezas_json" id="piezas-json-guardar" value='<?= htmlspecialchars(json_encode($piezas)) ?>'>
                 <button type="button" id="btn-guardar-piezas" class="w-full bg-azul hover:bg-blue-800 text-white text-lg font-bold py-3 rounded-xl shadow-md transition flex justify-center items-center gap-2 border-b-8 border-blue-900">
@@ -150,7 +147,7 @@
                 </button>
             </form>
 
-            <form id="finalizar-form" method="POST" action="index.php?action=finalizar">
+            <form id="finalizar-form" method="POST" action="index.php?action=finalizar" class="shrink-0">
                 <input type="hidden" name="informe_id" value="<?= $informeId ?? '' ?>">
                 <input type="hidden" name="piezas_json" id="piezas-json-finalizar" value='<?= htmlspecialchars(json_encode($piezas)) ?>'>
                 <button type="button" id="btn-finalizar" class="w-full bg-verdeOscuro hover:bg-green-800 text-white text-lg font-bold py-3 rounded-xl shadow-md transition flex justify-center items-center gap-2 border-b-8 border-green-900">
@@ -159,8 +156,8 @@
             </form>
         </div>
 
-        <div class="flex-1 min-w-0 hidden lg:flex flex-col">
-            <div id="pdf-preview" class="preview-page">
+        <div class="flex-1 min-w-0 hidden lg:flex flex-col items-center justify-center overflow-hidden min-h-0">
+            <div id="pdf-preview" class="preview-page" style="margin:auto">
                 <img class="page-bg" src="assets/img/pagina.png" alt="">
                 <div class="page-content">
                     <div class="text-center text-gray-400">Añade piezas para ver la previsualización</div>
@@ -472,7 +469,7 @@ function renderLista() {
     const filtro = ((document.getElementById('buscar-pieza') || {}).value || '').trim().toLowerCase();
 
     if (piezas.length === 0) {
-        lista.innerHTML = '<div class="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300"><i class="fa-solid fa-puzzle-piece text-5xl text-gray-300 mb-3 block"></i><p class="text-xl text-gray-500 mb-4">No hay piezas aún. Añade la primera pieza abajo.</p></div>';
+        lista.innerHTML = '<div class="h-full min-h-40 text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center"><i class="fa-solid fa-puzzle-piece text-6xl text-gray-300 mb-4 block"></i><p class="text-2xl text-gray-500 mb-2">No hay piezas aún.</p><p class="text-gray-400">Añade la primera pieza con los botones de la izquierda.</p></div>';
         if (countEl) countEl.textContent = '0';
         renderPDFPreview();
         return;
@@ -488,7 +485,7 @@ function renderLista() {
     if (countEl) countEl.textContent = filtro ? visibles.length + ' de ' + piezas.length : String(piezas.length);
 
     if (visibles.length === 0) {
-        lista.innerHTML = '<div class="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300"><i class="fa-solid fa-magnifying-glass text-5xl text-gray-300 mb-3 block"></i><p class="text-xl text-gray-500">Sin resultados para "<span class="font-bold">' + escHtml(filtro) + '</span>".</p></div>';
+        lista.innerHTML = '<div class="h-full min-h-40 text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center"><i class="fa-solid fa-magnifying-glass text-6xl text-gray-300 mb-4 block"></i><p class="text-2xl text-gray-500">Sin resultados para "<span class="font-bold">' + escHtml(filtro) + '</span>".</p></div>';
         renderPDFPreview();
         return;
     }
@@ -597,10 +594,15 @@ function renderPDFPreview() {
         innerHtml = dataLine + detrasHtml + flujoHtml + delanteHtml;
     }
     container.innerHTML = '<div class="preview-scaler"><img class="page-bg" src="assets/img/pagina.png" alt=""><div class="page-content" style="position:relative">' + innerHtml + '</div></div>';
-    container.style.height = (container.clientWidth * 792 / 612) + 'px';
+    var host = container.parentElement;
+    var scale = Math.min((host.clientWidth - 8) / 816, (host.clientHeight - 8) / 1056);
+    scale = Math.max(0.15, Math.min(1, scale));
+    container.style.width = Math.round(816 * scale) + 'px';
+    container.style.height = Math.round(1056 * scale) + 'px';
     var scaler = container.querySelector('.preview-scaler');
     if (scaler) {
-        scaler.style.transform = 'scale(' + (container.clientWidth / 816) + ')';
+        scaler.style.transform = 'scale(' + scale + ')';
+        scaler.style.transformOrigin = '0 0';
     }
     container.querySelectorAll('.pieza-draggable').forEach(function(el) {
         el.addEventListener('mousedown', startDrag);
@@ -1160,5 +1162,11 @@ document.addEventListener('input', function(e) {
     if (e.target.id === 'espacio-height-range') {
         document.getElementById('espacio-height-label').textContent = e.target.value + 'px';
     }
+});
+
+var resizeTimer;
+window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(renderPDFPreview, 150);
 });
 </script>

@@ -6,6 +6,16 @@ require_once __DIR__ . '/../models/Components/ComponenteFactory.php';
 
 class InformeController
 {
+    private static function tipoNombre(int $tipoId): string
+    {
+        foreach (Informe::tipos() as $t) {
+            if ((int) $t['id'] === $tipoId) {
+                return $t['nombre'];
+            }
+        }
+        return '';
+    }
+
     public static function paso1(): void
     {
         renderLayout('paso1', [
@@ -78,6 +88,7 @@ class InformeController
             'beneficiario'      => $beneficiario,
             'tipoId'            => $tipoId,
             'tipoPersonalizado' => $_SESSION['wizard']['tipo_personalizado'] ?? '',
+            'tipoNombre'        => self::tipoNombre($tipoId),
         ]);
     }
     
@@ -109,6 +120,7 @@ class InformeController
             'beneficiario'   => $beneficiario,
             'tipoId'         => $tipoId,
             'tipoPersonalizado' => $tipoPersonalizado,
+            'tipoNombre'     => self::tipoNombre($tipoId),
             'piezas'         => $piezas,
             'informeId'      => $informeId,
             'informe'        => $informe,
@@ -141,7 +153,9 @@ class InformeController
             'beneficiario'   => $beneficiario,
             'tipoId'         => $tipoId,
             'tipoPersonalizado' => $tipoPersonalizado,
+            'tipoNombre'     => self::tipoNombre($tipoId),
             'piezas'         => $piezas,
+            'piezasCount'    => count($piezas),
         ]);
     }
 
