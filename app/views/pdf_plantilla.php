@@ -11,7 +11,7 @@
             color: #000;
             line-height: 1.5;
         }
-        .page-wrap { position: relative; width: 612pt; min-height: 792pt; }
+        .page-wrap { position: relative; width: 612pt; }
         .page-wrap + .page-wrap { page-break-before: always; }
         .page-bg {
             position: absolute; top: 0; left: 0;
@@ -19,7 +19,7 @@
         }
         .page-content {
             position: relative; z-index: 1;
-            width: 612pt; min-height: 792pt;
+            width: 612pt;
         }
         .page-flow {
             position: relative;

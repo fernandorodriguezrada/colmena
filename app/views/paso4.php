@@ -48,7 +48,7 @@
 .preview-page .pdf-linea { border-top: 1px solid #000; width: 240pt; margin: 0 auto; padding-top: 4pt; font-size: 10pt; color: #555; }
 .preview-page .pdf-table { width:100%; border-collapse: collapse; margin: 10pt 0; }
 .preview-page .pdf-table th,
-.preview-page .pdf-table td { border: 1px solid #ccc; padding: 6pt 8pt; text-align: left; font-size: 11pt; }
+.preview-page .pdf-table td { border: 1px solid #8a8a8a; padding: 6pt 8pt; text-align: left; font-size: 11pt; }
 .preview-page .pdf-table th { background: #f0f0f0; font-weight: bold; }
 .preview-page .pdf-chart { text-align: center; margin: 10pt 0; }
 .preview-page .pdf-chart img,
@@ -584,41 +584,148 @@ function renderLista() {
     renderPDFPreview();
 }
 
+var PREV_FLOW_W = 645;      // ancho interior del flujo (px) en una hoja
+var PREV_FLOW_LIMIT = 760;   // alto útil de flujo por hoja (px), algo menor que la hoja carta
+
+var __measureEl = null;
+function __ensureMeasure() {
+    if (!__measureEl) {
+        __measureEl = document.createElement('div');
+        __measureEl.className = 'preview-page';
+        __measureEl.style.cssText = 'position:absolute;visibility:hidden;left:-2000px;top:0;box-sizing:border-box;width:' + PREV_FLOW_W + 'px;font-family:Times,serif;font-size:13.5pt;line-height:1.5;';
+        document.body.appendChild(__measureEl);
+    }
+}
+function __measure(html) {
+    __ensureMeasure();
+    __measureEl.innerHTML = html;
+    var h = __measureEl.offsetHeight;
+    __measureEl.innerHTML = '';
+    return h;
+}
+function __headerTr(headers) {
+    var s = '<tr>';
+    headers.forEach(function(h) { s += '<th>' + (h || '') + '</th>'; });
+    return s + '</tr>';
+}
+function __rowTr(row) {
+    var s = '<tr>';
+    row.forEach(function(c) { s += '<td>' + (c || '') + '</td>'; });
+    return s + '</tr>';
+}
+function paginateFlujo(pieces) {
+    var units = [];
+    var tableSeq = 0;
+    pieces.forEach(function(t) {
+        var p = t[0];
+        if (p.type === 'table') {
+            var headers = (p.headers || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+            var rows = (p.rows || '').split('\n').filter(Boolean).map(function(r) { return r.split(',').map(function(s) { return s.trim(); }); });
+            if (rows.length === 0) {
+                var eHtml = renderPiezaPreview(p, t[1]);
+                units.push({ kind: 'atomic', html: eHtml, h: __measure(eHtml) });
+            } else {
+                tableSeq++;
+                var headerTr = __headerTr(headers);
+                var full = '<table class="pdf-table"><thead>' + headerTr + '</thead><tbody>';
+                rows.forEach(function(r) { full += __rowTr(r); });
+                full += '</tbody></table>';
+                var headH = __measure('<table class="pdf-table"><thead>' + headerTr + '</thead><tbody></tbody></table>');
+                __ensureMeasure();
+                __measureEl.innerHTML = full;
+                var trs = __measureEl.querySelectorAll('.pdf-table tbody tr');
+                var rowHs = [];
+                for (var j = 0; j < trs.length; j++) rowHs.push(trs[j].offsetHeight);
+                __measureEl.innerHTML = '';
+                rows.forEach(function(r, k) {
+                    units.push({ kind: 'row', table: tableSeq, headH: headH, h: rowHs[k], headerTr: headerTr, rowTr: __rowTr(r) });
+                });
+            }
+        } else {
+            var pieceHtml = renderPiezaPreview(p, t[1]);
+            units.push({ kind: 'atomic', html: pieceHtml, h: __measure(pieceHtml) });
+        }
+    });
+
+    var pages = [];
+    var cur = [];
+    var curTables = {};
+    var rem = PREV_FLOW_LIMIT;
+    units.forEach(function(u) {
+        var cost = (u.kind === 'atomic') ? u.h : (curTables[u.table] ? u.h : u.headH + u.h);
+        if (cost > rem && cur.length) {
+            pages.push(cur);
+            cur = [];
+            curTables = {};
+            rem = PREV_FLOW_LIMIT;
+            cost = (u.kind === 'atomic') ? u.h : (u.headH + u.h);
+        }
+        rem -= cost;
+        cur.push(u);
+        if (u.kind === 'row') curTables[u.table] = true;
+    });
+    if (cur.length) pages.push(cur);
+    return pages;
+}
+function renderFlujoPage(page) {
+    var out = '';
+    var open = null;
+    page.forEach(function(u) {
+        if (u.kind === 'atomic') {
+            if (open !== null) { out += '</tbody></table>'; open = null; }
+            out += u.html;
+        } else {
+            if (open !== u.table) {
+                if (open !== null) out += '</tbody></table>';
+                out += '<table class="pdf-table"><thead>' + u.headerTr + '</thead><tbody>';
+                open = u.table;
+            }
+            out += u.rowTr;
+        }
+    });
+    if (open !== null) out += '</tbody></table>';
+    return out;
+}
+
 function renderPDFPreview() {
     const container = document.getElementById('pdf-preview');
     if (!container) return;
     const piezas = JSON.parse(piezasInput.value || '[]');
-    var paginas = [];
+    var physicalPages = [];
     if (!INFORME_DATA) {
-        paginas.push('<div class="text-center text-gray-400" style="padding:20pt">Primero debes crear el informe en el paso 3</div>');
+        physicalPages.push('<div class="text-center text-gray-400" style="padding:20pt">Primero debes crear el informe en el paso 3</div>');
     } else {
-        var page = { detras: [], flujo: [], delante: [] };
-        var flush = function() {
-            var dataLine = '';
-            if (paginas.length === 0) {
-                dataLine = '<div class="pdf-data-line"><b>Tipo:</b> ' + escHtml(INFORME_DATA.tipo_personalizado || INFORME_DATA.tipo_nombre || '') + ' &nbsp;|&nbsp; <b>N&deg;:</b> ' + String(INFORME_DATA.id || '').padStart(4, '0') + '</div>';
-            }
-            var detrasHtml = page.detras.map(function(t) { return renderPiezaPreview(t[0], t[1]); }).join('');
-            var flujoHtml = page.flujo.map(function(t) { return renderPiezaPreview(t[0], t[1]); }).join('');
-            var delanteHtml = page.delante.map(function(t) { return renderPiezaPreview(t[0], t[1]); }).join('');
-            paginas.push(dataLine + detrasHtml + flujoHtml + delanteHtml);
-            page = { detras: [], flujo: [], delante: [] };
-        };
+        var dataLine = '<div class="pdf-data-line"><b>Tipo:</b> ' + escHtml(INFORME_DATA.tipo_personalizado || INFORME_DATA.tipo_nombre || '') + ' &nbsp;|&nbsp; <b>N&deg;:</b> ' + String(INFORME_DATA.id || '').padStart(4, '0') + '</div>';
+        var groups = [];
+        var cur = { detras: [], flujo: [], delante: [] };
         piezas.forEach(function(p, i) {
-            if (p.type === 'pagina') { flush(); return; }
+            if (p.type === 'pagina') { groups.push(cur); cur = { detras: [], flujo: [], delante: [] }; return; }
             var layout = p.layout || 'inline';
-            if (layout === 'detras') page.detras.push([p, i]);
-            else if (layout === 'delante') page.delante.push([p, i]);
-            else page.flujo.push([p, i]);
+            if (layout === 'detras') cur.detras.push([p, i]);
+            else if (layout === 'delante') cur.delante.push([p, i]);
+            else cur.flujo.push([p, i]);
         });
-        flush();
+        groups.push(cur);
+
+        groups.forEach(function(g, gi) {
+            var detrasHtml = g.detras.map(function(t) { return renderPiezaPreview(t[0], t[1]); }).join('');
+            var delanteHtml = g.delante.map(function(t) { return renderPiezaPreview(t[0], t[1]); }).join('');
+            var pageUnitsArr = paginateFlujo(g.flujo);
+            if (pageUnitsArr.length === 0) pageUnitsArr = [[]];
+            pageUnitsArr.forEach(function(pageUnits, pi) {
+                var head = (gi === 0 && pi === 0) ? dataLine : '';
+                var det = (pi === 0) ? detrasHtml : '';
+                var del = (pi === 0) ? delanteHtml : '';
+                physicalPages.push(head + det + renderFlujoPage(pageUnits) + del);
+            });
+        });
     }
     var host = container.parentElement;
     var scale = Math.min(1, (host.clientWidth - 16) / 816);
     scale = Math.max(0.15, scale);
     var pw = Math.round(816 * scale) + 'px';
     var ph = Math.round(1056 * scale) + 'px';
-    container.innerHTML = paginas.map(function(innerHtml) {
+    container.innerHTML = physicalPages.map(function(innerHtml) {
         return '<div class="preview-page" style="width:' + pw + ';height:' + ph + '">' +
                '<div class="preview-scaler" style="transform:scale(' + scale + ');transform-origin:0 0">' +
                '<img class="page-bg" src="assets/img/pagina.png" alt="">' +
@@ -939,6 +1046,19 @@ function openModal(type, idx = null) {
             }
         }
         setTimeout(updateToolbarActive, 50);
+    }
+    if (type === 'table') {
+        if (document.getElementById('modal-idx').value !== '') {
+            const piezas = JSON.parse(piezasInput.value || '[]');
+            const idxVal = parseInt(document.getElementById('modal-idx').value);
+            const p = piezas[idxVal];
+            if (p) {
+                const headersEl = document.querySelector('[name="headers"]');
+                const rowsEl = document.querySelector('[name="rows"]');
+                if (p.headers && headersEl) headersEl.value = p.headers;
+                if (p.rows && rowsEl) rowsEl.value = p.rows;
+            }
+        }
     }
     if (type === 'image') setupImageUpload();
     if (type === 'collage') setupCollageUpload();

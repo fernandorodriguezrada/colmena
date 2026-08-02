@@ -8,6 +8,7 @@ use Dompdf\Options;
 
 class PdfHelper
 {
+    private const PDF_ROWS_PER_PAGE = 12;
     public static function generar(array $informe, array $beneficiario): string
     {
         $options = new Options();
@@ -87,6 +88,24 @@ class PdfHelper
                 continue;
             }
             $layout = $pieza['layout'] ?? 'inline';
+
+            if (($pieza['type'] ?? null) === 'table' && in_array($layout, ['inline', 'flujo'], true)) {
+                $rows = array_values(array_filter(explode("\n", (string)($pieza['rows'] ?? '')), fn ($r) => trim((string)$r) !== ''));
+                if (count($rows) > self::PDF_ROWS_PER_PAGE) {
+                    $first = true;
+                    foreach (array_chunk($rows, self::PDF_ROWS_PER_PAGE) as $chunk) {
+                        $cp = $pieza;
+                        $cp['rows'] = implode("\n", $chunk);
+                        if (!$first) {
+                            $flush();
+                        }
+                        $grupos['flujo'][] = $cp;
+                        $first = false;
+                    }
+                    continue;
+                }
+            }
+
             if ($layout === 'detras') {
                 $grupos['detras'][] = $pieza;
             } elseif ($layout === 'delante') {
