@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../views/layout.php';
 require_once __DIR__ . '/../helpers/pdf_helper.php';
 require_once __DIR__ . '/../models/Components/ComponenteFactory.php';
+require_once __DIR__ . '/../models/Plantilla.php';
 
 class InformeController
 {
@@ -59,6 +60,7 @@ class InformeController
             'paso'         => 2,
             'beneficiario' => $beneficiario,
             'tipos'        => Informe::tipos(),
+            'plantillas'   => Plantilla::listar(),
         ]);
     }
 
@@ -72,6 +74,12 @@ class InformeController
             }
             $_SESSION['wizard']['tipo_informe_id'] = $tipoId;
             $_SESSION['wizard']['tipo_personalizado'] = trim($_POST['tipo_personalizado'] ?? '');
+
+            $plantillaId = (int) ($_POST['plantilla_id'] ?? 0);
+            if ($plantillaId > 0) {
+                $plantilla = Plantilla::findById($plantillaId);
+                $_SESSION['wizard']['plantilla_piezas'] = $plantilla ? $plantilla['piezas_json'] : null;
+            }
         }
 
         $beneficiario = $_SESSION['wizard']['beneficiario'] ?? null;
@@ -91,7 +99,7 @@ class InformeController
             'tipoNombre'        => self::tipoNombre($tipoId),
         ]);
     }
-    
+
     public static function paso4(): void
     {
         $beneficiario = $_SESSION['wizard']['beneficiario'] ?? null;
@@ -178,7 +186,8 @@ class InformeController
             exit;
         }
 
-        $informeId = Informe::crear($beneficiarioId, $tipoInformeId, $motivo, $observaciones, $tipoPersonalizado ?: null, $elaboradoPor);
+        $informeId = Informe::crear($beneficiarioId, $tipoInformeId, $motivo, $observaciones, $tipoPersonalizado ?: null, $elaboradoPor, $_SESSION['wizard']['plantilla_piezas'] ?? null);
+        unset($_SESSION['wizard']['plantilla_piezas']);
         
         $_SESSION['wizard']['informe_id'] = $informeId;
 
@@ -212,6 +221,59 @@ class InformeController
         Informe::actualizarPiezas($informeId, $piezasJson);
         
         echo json_encode(['success' => true, 'piezas' => count($piezas)]);
+        exit;
+    }
+
+    public static function guardarPlantilla(): void
+    {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Método no permitido']);
+            exit;
+        }
+
+        $nombre      = trim($_POST['nombre'] ?? '');
+        $icono       = trim($_POST['icono'] ?? 'fa-file');
+        $color       = trim($_POST['color'] ?? 'bg-naranja|border-orange-700');
+        $scope       = trim($_POST['scope'] ?? 'private');
+        $piezasJson  = $_POST['piezas_json'] ?? '[]';
+
+        if ($nombre === '') {
+            echo json_encode(['success' => false, 'error' => 'El nombre es obligatorio']);
+            exit;
+        }
+
+        $piezas = json_decode($piezasJson, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo json_encode(['success' => false, 'error' => 'JSON inválido']);
+            exit;
+        }
+
+        $tipoInformeId = isset($_SESSION['wizard']['tipo_informe_id']) ? (int) $_SESSION['wizard']['tipo_informe_id'] : null;
+        if (!in_array($scope, ['global', 'private'], true)) {
+            $scope = 'private';
+        }
+
+        $id = Plantilla::crear($nombre, $icono, $color, $piezasJson, $tipoInformeId, $scope);
+
+        echo json_encode(['success' => true, 'id' => $id]);
+        exit;
+    }
+
+    public static function eliminarPlantilla(): void
+    {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Método no permitido']);
+            exit;
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+        $ok = $id > 0 && Plantilla::eliminar($id);
+
+        echo json_encode(['success' => $ok, 'error' => $ok ? null : 'No se puede eliminar esta plantilla']);
         exit;
     }
     

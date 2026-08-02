@@ -156,7 +156,7 @@
                 <input type="hidden" name="informe_id" value="<?= $informeId ?? '' ?>">
                 <input type="hidden" name="piezas_json" id="piezas-json-guardar" value='<?= htmlspecialchars(json_encode($piezas)) ?>'>
                 <button type="button" id="btn-guardar-piezas" class="w-full bg-azul hover:bg-blue-800 text-white text-lg font-bold py-3 rounded-xl shadow-md transition flex justify-center items-center gap-2 border-b-8 border-blue-900">
-                    <i class="fa-solid fa-save"></i> Guardar Piezas
+                    <i class="fa-solid fa-save"></i> Guardar como Plantilla
                 </button>
             </form>
 
@@ -190,6 +190,64 @@
                 <button type="submit" class="bg-verdeOscuro hover:bg-green-800 text-white px-6 py-2 rounded-lg font-bold">Guardar Pieza</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Modal para guardar plantilla -->
+<div id="modal-plantilla" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-verdeOscuro">Guardar como Plantilla</h3>
+            <button onclick="closePlantillaModal()" class="text-gray-500 hover:text-rojo text-3xl">&times;</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-lg font-bold mb-2">Nombre de la plantilla</label>
+                <input type="text" id="plantilla-nombre" placeholder="Ej: Informe de Contingencia"
+                       class="w-full p-3 text-lg border-2 border-gray-300 rounded-xl focus:outline-none focus:border-verdeOscuro mb-5">
+
+                <label class="block text-lg font-bold mb-2">Color del bloque</label>
+                <div class="flex flex-wrap gap-3 mb-5" id="plantilla-color-picker">
+                    <button type="button" class="plantilla-color w-10 h-10 rounded-xl shadow-md border-b-4 border-green-700 bg-verdeClaro" style="background-color:#a3d977" data-color="bg-verdeClaro|border-green-700"></button>
+                    <button type="button" class="plantilla-color w-10 h-10 rounded-xl shadow-md border-b-4 border-blue-800 bg-azul" style="background-color:#4a90d9" data-color="bg-azul|border-blue-800"></button>
+                    <button type="button" class="plantilla-color w-10 h-10 rounded-xl shadow-md border-b-4 border-purple-800 bg-morado" style="background-color:#9b6bd6" data-color="bg-morado|border-purple-800"></button>
+                    <button type="button" class="plantilla-color w-10 h-10 rounded-xl shadow-md border-b-4 border-pink-700 bg-rosa" style="background-color:#ec8fb5" data-color="bg-rosa|border-pink-700"></button>
+                    <button type="button" class="plantilla-color w-10 h-10 rounded-xl shadow-md border-b-4 border-orange-700 bg-naranja" style="background-color:#EF7F31" data-color="bg-naranja|border-orange-700"></button>
+                </div>
+
+                <label class="block text-lg font-bold mb-2">Icono</label>
+                <div class="grid grid-cols-6 gap-2 mb-5" id="plantilla-icon-grid">
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-users"><i class="fa-solid fa-users"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-heart-pulse"><i class="fa-solid fa-heart-pulse"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-triangle-exclamation"><i class="fa-solid fa-triangle-exclamation"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-file-lines"><i class="fa-solid fa-file-lines"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-clipboard-list"><i class="fa-solid fa-clipboard-list"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-stethoscope"><i class="fa-solid fa-stethoscope"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-book"><i class="fa-solid fa-book"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-graduation-cap"><i class="fa-solid fa-graduation-cap"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-briefcase"><i class="fa-solid fa-briefcase"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-chart-line"><i class="fa-solid fa-chart-line"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-list-check"><i class="fa-solid fa-list-check"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-envelope"><i class="fa-solid fa-envelope"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-handshake"><i class="fa-solid fa-handshake"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-shield-halved"><i class="fa-solid fa-shield-halved"></i></button>
+                    <button type="button" class="plantilla-icon flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-200 hover:border-verdeOscuro" data-icon="fa-notes-medical"><i class="fa-solid fa-notes-medical"></i></button>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-lg font-bold mb-2">Vista previa del bloque</label>
+                <div id="plantilla-preview" class="w-full bg-verdeClaro border-b-4 border-green-700 shadow-md p-4 rounded-xl text-white flex flex-col items-center">
+                    <i id="plantilla-preview-icon" class="fa-solid fa-users text-3xl text-crema opacity-80"></i>
+                    <span id="plantilla-preview-nombre" class="text-sm font-bold mt-1.5">Nombre</span>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Así se verá el bloque en el Paso 2.</p>
+            </div>
+        </div>
+        <div class="flex justify-end gap-4 mt-6">
+            <button type="button" onclick="closePlantillaModal()" class="bg-gray-300 hover:bg-gray-400 text-gris px-6 py-2 rounded-lg font-bold">Cancelar</button>
+            <button type="button" id="btn-save-plantilla" class="bg-azul hover:bg-blue-800 text-white px-6 py-2 rounded-lg font-bold">Guardar Plantilla</button>
+        </div>
     </div>
 </div>
 
@@ -1081,6 +1139,30 @@ function closeModal() {
     document.getElementById('modal-pieza').classList.remove('flex');
 }
 
+var plantillaState = { color: 'bg-verdeClaro|border-green-700', icono: 'fa-users' };
+
+function openPlantillaModal() {
+    var m = document.getElementById('modal-plantilla');
+    m.classList.remove('hidden');
+    m.classList.add('flex');
+    document.getElementById('plantilla-nombre').value = '';
+    document.getElementById('plantilla-nombre').addEventListener('input', updatePlantillaPreview);
+    updatePlantillaPreview();
+}
+function closePlantillaModal() {
+    var m = document.getElementById('modal-plantilla');
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+}
+function updatePlantillaPreview() {
+    var [bg, borde] = plantillaState.color.split('|');
+    var block = document.getElementById('plantilla-preview');
+    block.className = 'w-full ' + bg + ' border-b-4 ' + borde + ' shadow-md p-4 rounded-xl text-white flex flex-col items-center';
+    document.getElementById('plantilla-preview-icon').className = 'fa-solid ' + plantillaState.icono + ' text-3xl text-crema opacity-80';
+    var n = document.getElementById('plantilla-nombre').value.trim();
+    document.getElementById('plantilla-preview-nombre').textContent = n || 'Nombre';
+}
+
 function initTextToolbar() {
     var toolbar = document.querySelector('.toolbar');
     if (!toolbar) return;
@@ -1201,9 +1283,49 @@ document.addEventListener('DOMContentLoaded', function() {
     if (buscarPieza) buscarPieza.addEventListener('input', renderLista);
 
     document.getElementById('btn-cancelar').addEventListener('click', closeModal);
+
+    document.querySelectorAll('.plantilla-color').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            plantillaState.color = this.dataset.color;
+            document.querySelectorAll('.plantilla-color').forEach(function(b){ b.classList.remove('ring-4','ring-offset-2','ring-rojo'); });
+            this.classList.add('ring-4','ring-offset-2','ring-rojo');
+            updatePlantillaPreview();
+        });
+    });
+    document.querySelectorAll('.plantilla-icon').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            plantillaState.icono = this.dataset.icon;
+            document.querySelectorAll('.plantilla-icon').forEach(function(b){ b.classList.remove('border-verdeOscuro','bg-green-50'); });
+            this.classList.add('border-verdeOscuro','bg-green-50');
+            updatePlantillaPreview();
+        });
+    });
+    document.getElementById('plantilla-nombre').addEventListener('input', updatePlantillaPreview);
+    document.getElementById('btn-save-plantilla').addEventListener('click', function() {
+        var nombre = document.getElementById('plantilla-nombre').value.trim();
+        if (!nombre) { alert('Ponle un nombre a la plantilla'); return; }
+        var body = new URLSearchParams();
+        body.set('nombre', nombre);
+        body.set('color', plantillaState.color);
+        body.set('icono', plantillaState.icono);
+        body.set('scope', 'private');
+        body.set('piezas_json', document.getElementById('piezas-json').value);
+        fetch('index.php?action=guardar_plantilla', { method: 'POST', body: body })
+            .then(function(r){ return r.json(); })
+            .then(function(res) {
+                if (res.success) { closePlantillaModal(); alert('Plantilla guardada correctamente'); }
+                else { alert('Error al guardar: ' + (res.error || 'desconocido')); }
+            })
+            .catch(function(){ alert('Error de conexión al guardar la plantilla'); });
+    });
     document.getElementById('btn-guardar-piezas').addEventListener('click', function() {
         document.getElementById('piezas-json-guardar').value = document.getElementById('piezas-json').value;
-        document.getElementById('guardar-piezas-form').submit();
+        var infId = document.getElementById('guardar-piezas-form').querySelector('[name=informe_id]').value;
+        if (infId) {
+            var fd = new FormData(document.getElementById('guardar-piezas-form'));
+            fetch('index.php?action=guardar_piezas', { method: 'POST', body: fd }).catch(function(){});
+        }
+        openPlantillaModal();
     });
     document.getElementById('btn-finalizar').addEventListener('click', function() {
         if (confirm('¿Finalizar el informe? Ya no podrás editarlo.')) {

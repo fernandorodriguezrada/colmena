@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/models/Beneficiario.php';
 require_once __DIR__ . '/models/Informe.php';
+require_once __DIR__ . '/models/Plantilla.php';
 require_once __DIR__ . '/controllers/InicioController.php';
 require_once __DIR__ . '/controllers/InformeController.php';
 require_once __DIR__ . '/controllers/BusquedaController.php';
@@ -34,6 +35,12 @@ function routeRequest(): void
             break;
         case 'guardar_piezas':
             InformeController::guardarPiezas();
+            break;
+        case 'guardar_plantilla':
+            InformeController::guardarPlantilla();
+            break;
+        case 'eliminar_plantilla':
+            InformeController::eliminarPlantilla();
             break;
         case 'finalizar':
             InformeController::finalizar();
