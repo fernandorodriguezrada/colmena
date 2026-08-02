@@ -43,6 +43,34 @@
             .pantalla .tarjeta-compacta form textarea.mb-8 { margin-bottom: 0.75rem !important; }
             .pantalla .tarjeta-compacta form button { font-size: 1.25rem !important; padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
         }
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #EF7F31 transparent;
+        }
+        *::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        *::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        *::-webkit-scrollbar-thumb {
+            background-color: #EF7F31;
+            border-radius: 8px;
+        }
+        *::-webkit-scrollbar-thumb:hover {
+            background-color: #c2410c;
+        }
+        *::-webkit-scrollbar-corner {
+            background: transparent;
+        }
+        .ws-scroll {
+            scrollbar-width: none;
+        }
+        .ws-scroll::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
     </style>
 </head>
 <body class="bg-crema text-gris flex flex-col overflow-hidden">

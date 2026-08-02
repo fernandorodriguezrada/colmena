@@ -64,14 +64,12 @@
 .pieza-draggable .drag-label { position: absolute; top: -18px; left: 0; font-size: 8pt; background: #EF7F31; color: #fff; padding: 1px 6px; border-radius: 3px; opacity: 0; transition: opacity 0.2s; white-space: nowrap; pointer-events: none; }
 .pieza-draggable:hover .drag-label { opacity: 1; }
 .toolbar-btn.active { background: #EF7F31 !important; color: #fff !important; }
-.ws-scroll { scrollbar-width: none; }
-.ws-scroll::-webkit-scrollbar { width: 0; height: 0; }
 </style>
 <div class="pantalla px-8 h-full flex flex-col min-h-0">
     <a href="index.php?action=paso3" class="text-naranja font-bold mb-4 inline-block shrink-0"><i class="fa-solid fa-arrow-left"></i> Volver</a>
 
     <div class="flex gap-8 items-stretch flex-1 min-h-0">
-        <div class="w-80 flex-shrink-0 overflow-y-auto min-h-0 ws-scroll">
+        <div class="w-80 flex-shrink-0 overflow-y-auto min-h-0">
             <p class="text-xl text-gray-700 font-bold mb-4">Añadir piezas</p>
             <div class="grid grid-cols-2 gap-4">
                 <button type="button" class="btn-add-pieza bg-naranja border-b-4 border-orange-700 shadow-md p-4 rounded-xl text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0.5 transition-all duration-150 flex flex-col items-center" data-type="text">
@@ -105,7 +103,7 @@
             </div>
         </div>
 
-        <div class="max-w-3xl tarjeta-compacta bg-white p-8 rounded-2xl shadow-lg flex-1 min-w-[288px] self-stretch min-h-0 flex flex-col overflow-y-auto ws-scroll">
+        <div class="max-w-3xl tarjeta-compacta bg-white p-8 rounded-2xl shadow-lg flex-1 min-w-[288px] self-stretch min-h-0 flex flex-col overflow-y-auto">
             <div class="encabezado-paso flex justify-between items-center mb-6 shrink-0">
                 <h2 class="titulo-paso text-3xl font-bold text-verdeOscuro">Paso 4: Componer Informe</h2>
                 <div class="flex items-center gap-3 shrink-0">
@@ -135,7 +133,7 @@
                     <input type="text" id="buscar-pieza" placeholder="Buscar pieza..." class="w-52 pl-8 pr-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:border-naranja focus:outline-none">
                 </div>
             </div>
-            <div id="lista-piezas" class="space-y-3 overflow-y-auto pr-1 mb-4 flex-1 min-h-0 ws-scroll">
+            <div id="lista-piezas" class="space-y-3 overflow-y-auto pr-1 mb-4 flex-1 min-h-0">
                 <div class="h-full min-h-40 text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
                     <i class="fa-solid fa-puzzle-piece text-6xl text-gray-300 mb-4 block"></i>
                     <p class="text-2xl text-gray-500 mb-2">No hay piezas aún.</p>
@@ -160,7 +158,7 @@
             </form>
         </div>
 
-        <div class="flex-[1.7] min-w-0 hidden lg:flex flex-col overflow-y-auto min-h-0 ws-scroll">
+        <div class="flex-[1.7] min-w-0 hidden lg:flex flex-col overflow-y-auto min-h-0 [scrollbar-gutter:stable]">
             <div id="pdf-preview" class="preview-page" style="margin:auto">
                 <img class="page-bg" src="assets/img/pagina.png" alt="">
                 <div class="page-content">
