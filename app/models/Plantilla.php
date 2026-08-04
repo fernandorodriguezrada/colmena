@@ -3,50 +3,9 @@ require_once __DIR__ . '/../database.php';
 
 class Plantilla
 {
-    private static function defaultsSeed(string $name): string
-    {
-        $seeds = [
-            'social' => json_encode([
-                ['type' => 'text', 'layout' => 'inline', 'content' => '<p>El presente informe corresponde al seguimiento social realizado al beneficiario durante el periodo señalado. Durante la visita se observaron las condiciones del entorno familiar y comunitario, así como la canalización ante las instituciones correspondientes.</p>'],
-                ['type' => 'table', 'layout' => 'inline', 'headers' => 'Actividad,Fecha,Observaciones',
-                    'rows' => "Visita domiciliaria,Semana 1,Revisión general\nEntrega de orientación,Semana 2,Buen estado\nSeguimiento institucional,Semana 3,En proceso"],
-                ['type' => 'firma', 'layout' => 'inline', 'config' => ['nombre' => '', 'titulo' => 'Trabajador Social']],
-            ]),
-            'medica' => json_encode([
-                ['type' => 'text', 'layout' => 'inline', 'content' => '<p>Informe de evaluación médica del paciente. Se describen los hallazgos clínicos relevantes, signos vitales y las recomendaciones terapéuticas a seguir.</p>'],
-                ['type' => 'table', 'layout' => 'inline', 'headers' => 'Indicador,Resultado,Ref.',
-                    'rows' => 'Presión arterial,120/80 mmHg,Normal\nFrecuencia cardiaca,72 lpm,Normal\nTemperatura,36.8 °C,Normal'],
-                ['type' => 'firma', 'layout' => 'inline', 'config' => ['nombre' => '', 'titulo' => 'Médico Evaluador']],
-            ]),
-            'incidencia' => json_encode([
-                ['type' => 'text', 'layout' => 'inline', 'content' => '<p>Se reporta la incidencia ocurrida, describiendo el contexto, las partes involucradas y las acciones tomadas para su atención y prevención futura.</p>'],
-                ['type' => 'table', 'layout' => 'inline', 'headers' => 'Fecha del hecho,Hora,Detalle',
-                    'rows' => 'dd/mm/aaaa,00:00,Descripción del incidente\ndd/mm/aaaa,00:00,Acciones realizadas'],
-                ['type' => 'firma', 'layout' => 'inline', 'config' => ['nombre' => '', 'titulo' => 'Responsable']],
-            ]),
-        ];
-        return $seeds[$name] ?? $seeds['social'];
-    }
-
     public static function defaults(): array
     {
-        return [
-            [
-                'id' => -1, 'nombre' => 'Seguimiento Social', 'icono' => 'fa-users',
-                'color' => 'bg-verdeClaro|border-green-700', 'scope' => 'default',
-                'tipo_informe_id' => 1, 'piezas_json' => self::defaultsSeed('social'),
-            ],
-            [
-                'id' => -2, 'nombre' => 'Evaluación Médica', 'icono' => 'fa-heart-pulse',
-                'color' => 'bg-azul|border-blue-800', 'scope' => 'default',
-                'tipo_informe_id' => 2, 'piezas_json' => self::defaultsSeed('medica'),
-            ],
-            [
-                'id' => -3, 'nombre' => 'Reporte de Incidencia', 'icono' => 'fa-triangle-exclamation',
-                'color' => 'bg-naranja|border-orange-700', 'scope' => 'default',
-                'tipo_informe_id' => 3, 'piezas_json' => self::defaultsSeed('incidencia'),
-            ],
-        ];
+        return [];
     }
 
     public static function listar(): array

@@ -5,9 +5,11 @@
             <h2 class="titulo-paso text-3xl font-bold text-verdeOscuro">Paso 2: ¿Qué tipo de informe es?</h2>
             <div class="flex items-center gap-3 shrink-0">
                 <?php require __DIR__ . '/partials/beneficiario_info.php'; ?>
-                <button type="button" id="btn-editar-plantillas" class="bg-gray-100 border border-gray-300 text-gris px-3 py-2 rounded-lg font-bold text-sm hover:bg-gray-200 transition flex items-center gap-2" title="Editar/Eliminar plantillas">
-                    <i class="fa-solid fa-pen"></i> Editar
-                </button>
+                <?php if (!empty($plantillas)): ?>
+                    <button type="button" id="btn-editar-plantillas" class="bg-gray-100 border border-gray-300 text-gris px-3 py-2 rounded-lg font-bold text-sm hover:bg-gray-200 transition flex items-center gap-2" title="Editar/Eliminar plantillas">
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </button>
+                <?php endif; ?>
                 <span class="bg-naranja text-white px-4 py-1 rounded-full font-bold">2 of 5</span>
             </div>
         </div>
@@ -49,16 +51,23 @@
                         $esGlobal  = $p['scope'] === 'global';
                         $deletable = !$esDefault && !$esGlobal;
                     ?>
-                        <button type="button" class="plantilla-card relative w-full h-24 rounded-xl shadow-md border-b-4 flex flex-col items-center justify-center text-white transition hover:-translate-y-0.5 <?= $bg ?> border-<?= str_replace('border-', '', $borde) ?>"
+                        <button type="button" class="plantilla-card relative w-full <?= $bg ?> border-b-4 <?= $borde ?> shadow-md p-4 rounded-xl text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0.5 transition-all duration-150 flex flex-col items-center"
                                 data-id="<?= (int)$p['id'] ?>"
                                 data-tipo="<?= (int)($p['tipo_informe_id'] ?? 4) ?>"
                                 data-deletable="<?= $deletable ? '1' : '0' ?>">
-                            <i class="fa-solid <?= htmlspecialchars($p['icono']) ?> text-3xl text-crema opacity-80"></i>
-                            <span class="text-sm font-bold mt-1.5 text-center px-2"><?= htmlspecialchars($p['nombre']) ?></span>
-                            <?php if ($deletable): ?>
-                            <button type="button" class="plantilla-delete absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500/80 text-white text-xs opacity-0 hover:opacity-100 transition"
-                                    data-id="<?= (int)$p['id'] ?>" title="Eliminar">&times;</button>
-                            <?php endif; ?>
+                            <span class="plantilla-body flex flex-col items-center">
+                                <i class="fa-solid <?= htmlspecialchars($p['icono']) ?> text-3xl text-crema opacity-80" style="text-shadow: 0 2px 3px rgba(0,0,0,0.25);"></i>
+                                <span class="text-sm font-bold mt-1.5"><?= htmlspecialchars($p['nombre']) ?></span>
+                            </span>
+                            <span class="plantilla-badge absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-white text-xs shadow-md <?= $deletable ? 'bg-red-600' : 'bg-gray-500' ?>">
+                                <i class="fa-solid <?= $deletable ? 'fa-trash' : 'fa-lock' ?>"></i>
+                            </span>
+                            <span class="plantilla-del-layer absolute inset-0 rounded-xl items-center justify-center gap-2 bg-red-600 text-white font-bold">
+                                <i class="fa-solid fa-trash"></i> Eliminar
+                            </span>
+                            <span class="plantilla-lock-layer absolute inset-0 rounded-xl items-center justify-center gap-2 bg-gray-600/90 text-white font-bold">
+                                <i class="fa-solid fa-lock"></i> Protegida
+                            </span>
                         </button>
                     <?php endforeach; ?>
                 </div>
@@ -83,54 +92,67 @@
     </div>
 </div>
 
+<style>
+.plantilla-del-layer, .plantilla-lock-layer, .plantilla-badge { display: none; }
+#seccion-plantillas.editing .plantilla-badge { display: inline-flex; }
+#seccion-plantillas.editing .plantilla-body { pointer-events: none; }
+#seccion-plantillas.editing .plantilla-card:hover { transform: none !important; }
+#seccion-plantillas.editing .plantilla-card[data-deletable="1"]:hover { background-color: #dc2626 !important; border-bottom-color: #991b1b !important; }
+#seccion-plantillas.editing .plantilla-card[data-deletable="1"]:hover .plantilla-del-layer { display: flex; }
+#seccion-plantillas.editing .plantilla-card[data-deletable="1"]:hover .plantilla-body { opacity: 0; }
+#seccion-plantillas.editing .plantilla-card[data-deletable="0"]:hover .plantilla-lock-layer { display: flex; }
+#seccion-plantillas.editing .plantilla-card[data-deletable="0"]:hover .plantilla-body { opacity: 0; }
+</style>
+
 <script>
+var editMode = false;
+
+function deletePlantilla(card) {
+    var id = card.dataset.id;
+    fetch('index.php?action=eliminar_plantilla', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'id=' + encodeURIComponent(id)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+        if (res.success) { card.remove(); }
+        else { alert('Error: ' + (res.error || 'no permitido')); }
+    });
+}
+
 document.querySelectorAll('.plantilla-card').forEach(function(card) {
-    card.addEventListener('click', function(e) {
-        if (e.target.closest('.plantilla-delete')) return;
+    card.addEventListener('click', function() {
+        if (editMode) {
+            if (this.dataset.deletable === '1') {
+                if (confirm('¿Eliminar esta plantilla?')) deletePlantilla(this);
+            } else {
+                alert('Esta plantilla no se puede eliminar.');
+            }
+            return;
+        }
         document.getElementById('plantilla-hidden-id').value = this.dataset.id;
         document.getElementById('plantilla-hidden-tipo').value = this.dataset.tipo;
         document.getElementById('form-paso2').submit();
     });
 });
 
-var editMode = false;
-document.getElementById('btn-editar-plantillas').addEventListener('click', function() {
-    editMode = !editMode;
-    var btn = this;
-    btn.classList.toggle('bg-naranja', editMode);
-    btn.classList.toggle('text-white', editMode);
-    btn.classList.toggle('border-naranja', editMode);
-    btn.classList.toggle('bg-gray-100', !editMode);
-    btn.classList.toggle('text-gris', !editMode);
-    btn.classList.toggle('border-gray-300', !editMode);
-    btn.innerHTML = editMode
+function setEditMode(on) {
+    editMode = on;
+    document.getElementById('seccion-plantillas').classList.toggle('editing', on);
+    var btn = document.getElementById('btn-editar-plantillas');
+    btn.classList.toggle('bg-naranja', on);
+    btn.classList.toggle('text-white', on);
+    btn.classList.toggle('border-naranja', on);
+    btn.classList.toggle('bg-gray-100', !on);
+    btn.classList.toggle('text-gris', !on);
+    btn.classList.toggle('border-gray-300', !on);
+    btn.classList.toggle('hover:bg-orange-600', on);
+    btn.classList.toggle('hover:bg-gray-200', !on);
+    btn.innerHTML = on
         ? '<i class="fa-solid fa-check"></i> Listo'
         : '<i class="fa-solid fa-pen"></i> Editar';
-    document.querySelectorAll('.plantilla-delete').forEach(function(d) {
-        d.style.opacity = editMode ? '1' : '0';
-        d.style.pointerEvents = editMode ? 'auto' : 'none';
-    });
-});
+}
 
-document.querySelectorAll('.plantilla-delete').forEach(function(d) {
-    d.addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (!confirm('¿Eliminar esta plantilla?')) return;
-        var id = this.dataset.id;
-        fetch('index.php?action=eliminar_plantilla', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'id=' + encodeURIComponent(id)
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(res) {
-            if (res.success) {
-                var card = document.querySelector('.plantilla-card[data-id="' + id + '"]');
-                if (card) card.remove();
-            } else {
-                alert('Error: ' + (res.error || 'no permitido'));
-            }
-        });
-    });
-});
+document.getElementById('btn-editar-plantillas').addEventListener('click', function() { setEditMode(!editMode); });
 </script>
